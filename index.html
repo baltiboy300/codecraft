@@ -85,7 +85,7 @@
             z-index: 10;
         }
 
-        #leaflet-map {
+        #leaflet-map, #sos-leaflet-map {
             width: 100%;
             height: 100%;
         }
@@ -126,6 +126,37 @@
             border-radius: 50%;
             border: 2px solid #3b82f6;
             animation: gps-pulse 2s infinite;
+        }
+
+        /* SOS Marker Icon */
+        .sos-gps-marker {
+            background: none;
+            border: none;
+        }
+        .sos-icon-inner {
+            width: 24px;
+            height: 24px;
+            background: #dc2626;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.9);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+        }
+        .sos-icon-inner::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            right: -15px;
+            bottom: -15px;
+            border-radius: 50%;
+            border: 3px solid #dc2626;
+            animation: gps-pulse 1.5s infinite;
         }
 
         @keyframes gps-pulse {
@@ -171,6 +202,15 @@
             from { opacity: 0; transform: translateX(20px); }
             to { opacity: 1; transform: translateX(0); }
         }
+
+        /* Threatened Support Card */
+        #threat-support-card {
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body id="app-body">
@@ -195,7 +235,11 @@
                 </div>
                 
                 <div class="flex items-center space-x-2 md:space-x-4">
-                    <!-- LE Access Toggle -->
+                    <div id="citizen-nav-links" class="hidden md:flex items-center space-x-6 text-sm font-semibold mr-4">
+                        <a href="javascript:void(0)" onclick="switchView('citizen')" class="nav-link text-slate-600 hover:text-slate-900">Safety Hub</a>
+                        <a href="javascript:void(0)" onclick="switchView('emergency-map')" class="nav-link text-red-600 hover:text-red-700">Emergency Map</a>
+                    </div>
+
                     <button onclick="switchView('le')" class="flex items-center space-x-2 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-[10px] md:text-xs transition-all hover:bg-slate-900 hover:text-white">
                         <i class="fas fa-user-shield"></i>
                         <span class="hidden sm:inline">LE PORTAL</span>
@@ -220,19 +264,37 @@
     <div id="citizen-view" class="block">
         <header class="pt-40 pb-20 px-4 bg-gradient-to-b from-white to-slate-50">
             <div class="max-w-7xl mx-auto text-center">
-                <div id="emergency-indicator" class="hidden inline-flex items-center space-x-2 bg-red-600 text-white px-6 py-2 rounded-full text-xs font-black mb-8 animate-pulse shadow-xl">
-                    <i class="fas fa-broadcast-tower"></i>
-                    <span>EMERGENCY TRIGGER ACTIVE: PRESS VOLUME UP 3X TO SIREN</span>
+                <!-- SOS Pulse Indicator -->
+                <div id="emergency-indicator" class="hidden inline-flex flex-col items-center mb-8">
+                    <div class="inline-flex items-center space-x-2 bg-red-600 text-white px-6 py-2 rounded-full text-xs font-black animate-pulse shadow-xl mb-4">
+                        <i class="fas fa-broadcast-tower"></i>
+                        <span>EMERGENCY TRIGGER ACTIVE</span>
+                    </div>
+                    <!-- Assigned Volunteer Display -->
+                    <div id="threat-support-card" class="bg-white p-6 rounded-3xl shadow-2xl border-2 border-red-100 max-w-sm mx-auto hidden">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl shadow-lg">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Support Assigned</p>
+                                <h4 id="assigned-vol-name" class="text-lg font-black text-slate-900 leading-tight">Volunteer Name</h4>
+                                <a id="assigned-vol-phone" href="tel:" class="text-blue-600 font-bold text-sm hover:underline tracking-tight">+91 00000 00000</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
                 <div id="gps-indicator" class="hidden inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-black mb-8 shadow-xl">
                     <i class="fas fa-satellite"></i>
                     <span>LIVE GPS TRACKING ACTIVE: YOUR LOCATION IS BEING MONITORED</span>
                 </div>
+
                 <h1 class="text-5xl md:text-7xl font-black text-slate-900 mb-6 tracking-tight">
                     Secure Your <br><span class="text-blue-600">Neighborhood.</span>
                 </h1>
                 <p class="text-xl text-slate-500 max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-                    Real-time crime reporting and neighborhood watch coordination for a safer India.
+                    Feeling unsafe? Activate SOS to be instantly assigned a random "Be on call" volunteer for immediate support.
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
                     <button onclick="scrollToId('alerts')" class="btn-primary w-full sm:w-auto px-10 py-4 rounded-2xl font-bold shadow-xl">Explore Alerts</button>
@@ -243,7 +305,7 @@
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-32">
             <section id="alerts">
-                <h2 class="text-4xl font-black text-slate-900 mb-12 text-center md:text-left">Safety Alerts</h2>
+                <h2 class="text-4xl font-black text-slate-900 mb-12 text-center md:text-left text-slate-900">Safety Alerts</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="alerts-grid"></div>
             </section>
 
@@ -267,11 +329,41 @@
             <section id="volunteers" class="bg-slate-900 text-white rounded-[3rem] p-12">
                 <div class="max-w-3xl">
                     <h2 class="text-4xl font-black mb-6">Be on call.</h2>
-                    <p class="text-slate-400 mb-8">Join the Citizen Watch Program. Be on call so others can call you for support.</p>
-                    <button onclick="openVolunteerModal()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold shadow-xl">Join Program</button>
+                    <p class="text-slate-400 mb-8 font-medium">Join the Citizen Watch Program. Once registered, the system may assign you to support nearby users who feel threatened.</p>
+                    <button onclick="openVolunteerModal()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold shadow-xl transition-all">Join Program</button>
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- EMERGENCY MAP VIEW -->
+    <div id="emergency-map-view" class="hidden min-h-screen pt-32 pb-20 px-4 md:px-8 bg-slate-50">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10">
+                <div>
+                    <h1 class="text-4xl font-black text-slate-900">SOS Command Center</h1>
+                    <p class="text-slate-500 font-medium">Tracking all active SOS triggers and volunteer assignments.</p>
+                </div>
+                <div class="bg-red-600 text-white px-6 py-3 rounded-2xl shadow-lg flex items-center space-x-3 animate-pulse">
+                    <i class="fas fa-satellite-dish"></i>
+                    <span class="text-xs font-black uppercase tracking-widest">Live Emergency Tracking</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div class="lg:col-span-3">
+                    <div class="map-frame-container" style="height: 650px;">
+                        <div id="sos-leaflet-map"></div>
+                    </div>
+                </div>
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
+                        <h3 class="font-black text-slate-900 text-sm uppercase tracking-widest mb-6">Active Signals</h3>
+                        <div id="sos-list-sidebar" class="space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- LAW ENFORCEMENT VIEW -->
@@ -280,54 +372,37 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                 <div>
                     <h1 class="text-4xl font-black text-slate-900">Law Enforcement Command Center</h1>
-                    <p class="text-slate-500 font-medium">Monitoring Delhi NCR Precincts | Authorized Access Only</p>
+                    <p class="text-slate-500 font-medium tracking-tight">Precinct Oversight | Authorized Access Only</p>
                 </div>
-                <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
-                        <span class="text-xs font-black text-red-600">LIVE MONITORING</span>
-                    </div>
+                <div class="flex items-center space-x-2 bg-white px-4 py-2 rounded-xl border border-slate-200">
+                    <span class="w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+                    <span class="text-[10px] font-black text-slate-700 uppercase">System Live</span>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <!-- LE Sidebar Stats -->
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Active SOS Signals</p>
+                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Active SOS Signals</p>
                         <p id="le-sos-count" class="text-4xl font-black text-red-600">0</p>
                     </div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Reports (24h)</p>
-                        <p id="le-reports-count" class="text-4xl font-black text-slate-900">3</p>
+                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Total Reports (24h)</p>
+                        <p id="le-reports-count" class="text-4xl font-black text-slate-900">0</p>
                     </div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Volunteers Active</p>
+                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Volunteers Active</p>
                         <p id="le-vol-count" class="text-4xl font-black text-blue-600">0</p>
                     </div>
                 </div>
 
-                <!-- Main Monitoring Area -->
                 <div class="lg:col-span-3 space-y-8">
-                    <!-- SOS Signals List -->
                     <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                            <h3 class="font-black text-slate-900 uppercase text-sm tracking-widest">Active SOS Feed</h3>
-                            <button class="text-xs font-bold text-slate-400">View All</button>
+                            <h3 class="font-black text-slate-900 uppercase text-xs tracking-widest">Active SOS Feed & Volunteer Links</h3>
                         </div>
-                        <div id="le-sos-list" class="divide-y divide-slate-50 max-h-[300px] overflow-y-auto">
-                            <!-- Injected Active SOS Users -->
+                        <div id="le-sos-list" class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
                             <div class="p-8 text-center text-slate-400 italic text-sm">No active SOS signals detected.</div>
-                        </div>
-                    </div>
-
-                    <!-- Crime Incident Reports -->
-                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                            <h3 class="font-black text-slate-900 uppercase text-sm tracking-widest">Incident Reports Gallery</h3>
-                        </div>
-                        <div id="le-reports-list" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Injected User Reports -->
                         </div>
                     </div>
                 </div>
@@ -335,7 +410,7 @@
         </div>
     </div>
 
-    <!-- Modals (Report, Volunteer) -->
+    <!-- Modals -->
     <div id="reportModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative overflow-y-auto max-h-[90vh]">
             <div class="absolute top-0 left-0 w-full h-2 bg-red-600"></div>
@@ -344,27 +419,26 @@
                 <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-900 p-2"><i class="fas fa-times text-xl"></i></button>
             </div>
             <form class="space-y-6" onsubmit="handleReportSubmit(event)">
-                <input type="text" id="report-type" required placeholder="Incident Type (e.g. Theft, Assault)" class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 focus:ring-2 focus:ring-red-500 transition-all font-bold">
-                <textarea id="report-details" required rows="4" class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 focus:ring-2 focus:ring-red-500 transition-all" placeholder="Describe the event..."></textarea>
+                <input type="text" id="report-type" required placeholder="Incident Type" class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200">
+                <textarea id="report-details" required rows="4" class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200" placeholder="Describe the event..."></textarea>
                 <div class="photo-preview" onclick="document.getElementById('photoInput').click()">
                     <div class="text-center text-slate-400" id="preview-text">
                         <i class="fas fa-camera text-2xl mb-2"></i>
-                        <p class="text-[10px] font-bold uppercase tracking-widest">Evidence Upload</p>
+                        <p class="text-[10px] font-black">Evidence Upload</p>
                     </div>
                     <img id="img-output" class="hidden w-full h-full object-cover">
                 </div>
                 <input type="file" id="photoInput" class="hidden" accept="image/*" onchange="previewImage(event)">
-                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black shadow-xl uppercase tracking-widest text-sm">Transmit to Police</button>
+                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black shadow-xl uppercase text-sm">Transmit to Police</button>
             </form>
         </div>
     </div>
 
-    <!-- Volunteer Modal -->
     <div id="volunteerModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
             <div class="flex justify-between items-center mb-8">
-                <h3 class="text-2xl font-black text-slate-900">Be on call</h3>
+                <h3 class="text-2xl font-black text-slate-900 uppercase">Be on call</h3>
                 <button onclick="closeVolunteerModal()" class="text-slate-400 hover:text-slate-900 p-2"><i class="fas fa-times text-xl"></i></button>
             </div>
             <form class="space-y-5" onsubmit="handleRegistration(event)">
@@ -375,31 +449,11 @@
         </div>
     </div>
 
-    <!-- Feedback Toast -->
     <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[120] hidden">
         <div class="bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center space-x-4">
-            <span id="toast-msg" class="font-bold text-sm tracking-tight"></span>
+            <span id="toast-msg" class="font-bold text-sm"></span>
         </div>
     </div>
-
-    <!-- Firebase Integration -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-
-        const firebaseConfig = {
-          apiKey: "AIzaSyAWh2RWD7DRJenPhg-_F3SrbTt9ZvfMb58",
-          authDomain: "codecraft-ba355.firebaseapp.com",
-          projectId: "codecraft-ba355",
-          storageBucket: "codecraft-ba355.firebasestorage.app",
-          messagingSenderId: "462067380594",
-          appId: "1:462067380594:web:0f94e2c2b9d60bbc236deb",
-          measurementId: "G-RGJ5TDG7KM"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-    </script>
 
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -416,9 +470,10 @@
 
         let emergencyMode = false;
         let gpsTrackingMode = false;
-        let map;
+        let map, sosMap;
         let watchId = null;
         let userMarker = null;
+        let sosMarkers = {};
         let currentView = 'citizen';
         let volumePressCount = 0;
         let lastVolumePressTime = 0;
@@ -426,165 +481,221 @@
         // Data Management (In-Memory for Demo)
         const appData = {
             reports: [
-                { type: "Mock Theft", details: "Two suspects on bike spotted near Hauz Khas.", img: null, time: "2h ago" },
-                { type: "Vandalism", details: "Graffiti reported on heritage wall.", img: null, time: "5h ago" }
+                { type: "Mock Theft", details: "Two suspects on bike spotted near Hauz Khas.", img: null, time: "2h ago" }
             ],
-            emergencyUsers: [],
-            volunteers: []
+            emergencyUsers: [], // Each object: { id, lat, lng, time, assignedVol }
+            volunteers: [
+                { name: "Rahul S. (Delhi Watch)", phone: "+91 98112 33445" },
+                { name: "Megha P. (Neighborhood Watch)", phone: "+91 99002 88776" }
+            ]
         };
 
         function switchView(view) {
             currentView = view;
             const citizenView = document.getElementById('citizen-view');
             const leView = document.getElementById('le-view');
+            const sosView = document.getElementById('emergency-map-view');
             const body = document.getElementById('app-body');
 
+            citizenView.classList.add('hidden');
+            leView.classList.add('hidden');
+            sosView.classList.add('hidden');
+            body.classList.remove('le-mode-active');
+
             if (view === 'le') {
-                citizenView.classList.add('hidden');
                 leView.classList.remove('hidden');
                 body.classList.add('le-mode-active');
                 renderLEPortal();
-                showToast("Law Enforcement View Active");
+            } else if (view === 'emergency-map') {
+                sosView.classList.remove('hidden');
+                initSosMap();
+                renderSosPortal();
             } else {
                 citizenView.classList.remove('hidden');
-                leView.classList.add('hidden');
-                body.classList.remove('le-mode-active');
             }
             window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function initSosMap() {
+            if (!sosMap) {
+                sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 11);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
+            }
+            setTimeout(() => sosMap.invalidateSize(), 200);
+        }
+
+        function renderSosPortal() {
+            const list = document.getElementById('sos-list-sidebar');
+            list.innerHTML = '';
+            Object.values(sosMarkers).forEach(m => sosMap.removeLayer(m));
+            sosMarkers = {};
+
+            if (appData.emergencyUsers.length === 0) {
+                list.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">No active signals</div>';
+                return;
+            }
+
+            appData.emergencyUsers.forEach(user => {
+                const div = document.createElement('div');
+                div.className = "p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl cursor-pointer hover:border-red-500 transition-all";
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] font-black text-red-600">ID: ${user.id}</span>
+                        <span class="text-[10px] font-bold text-slate-400">${user.time}</span>
+                    </div>
+                    <p class="text-[11px] font-bold text-slate-900">${user.assignedVol ? `Assigned to: ${user.assignedVol.name}` : 'Awaiting Dispatch'}</p>
+                `;
+                div.onclick = () => sosMap.flyTo([user.lat, user.lng], 15);
+                list.appendChild(div);
+
+                const sosIcon = L.divIcon({ 
+                    className: 'sos-gps-marker', 
+                    html: `<div class="sos-icon-inner"><i class="fas fa-exclamation"></i></div>`, 
+                    iconSize: [30, 30], iconAnchor: [15, 15] 
+                });
+                const marker = L.marker([user.lat, user.lng], { icon: sosIcon }).addTo(sosMap);
+                sosMarkers[user.id] = marker;
+            });
         }
 
         function renderLEPortal() {
             const sosList = document.getElementById('le-sos-list');
             const reportsList = document.getElementById('le-reports-list');
             
-            // Render SOS Users
             if (appData.emergencyUsers.length === 0) {
-                sosList.innerHTML = `<div class="p-8 text-center text-slate-400 italic text-sm">No active SOS signals detected.</div>`;
+                sosList.innerHTML = `<div class="p-8 text-center text-slate-400 italic text-sm font-medium">Monitoring Delhi NCR... No active SOS signals.</div>`;
             } else {
                 sosList.innerHTML = appData.emergencyUsers.map(user => `
-                    <div class="p-4 flex items-center justify-between bg-red-50/50">
+                    <div class="p-5 flex flex-col md:flex-row md:items-center justify-between bg-red-50/30 gap-4">
                         <div class="flex items-center space-x-4">
-                            <div class="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center animate-pulse"><i class="fas fa-exclamation"></i></div>
+                            <div class="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center animate-pulse shadow-lg"><i class="fas fa-user-shield"></i></div>
                             <div>
-                                <p class="font-black text-slate-900 text-sm uppercase">Anonymous User ID: ${user.id}</p>
-                                <p class="text-[10px] text-red-600 font-bold uppercase">SOS TRIGGERED</p>
+                                <p class="font-black text-slate-900 text-sm tracking-tight">CITIZEN ID: ${user.id}</p>
+                                <p class="text-[10px] text-red-600 font-bold uppercase">${user.assignedVol ? `Escorted by: ${user.assignedVol.name}` : 'REQUESTING VOLUNTEER'}</p>
                             </div>
                         </div>
-                        <button class="text-xs font-black bg-slate-900 text-white px-4 py-2 rounded-lg shadow-sm">DISPATCH PRECINCT</button>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="switchView('emergency-map')" class="text-xs font-black bg-slate-900 text-white px-5 py-2.5 rounded-xl shadow-md">TRACK UNIT</button>
+                        </div>
                     </div>
                 `).join('');
             }
 
-            // Render Reports
             reportsList.innerHTML = appData.reports.map(report => `
-                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-full uppercase">${report.type}</span>
-                        <span class="text-[10px] font-bold text-slate-400">${report.time}</span>
-                    </div>
-                    <p class="text-xs text-slate-600 font-medium mb-4">${report.details}</p>
-                    ${report.img ? `<img src="${report.img}" class="w-full h-32 object-cover rounded-xl mb-3 shadow-sm">` : `<div class="w-full h-12 flex items-center justify-center bg-slate-200 rounded-xl text-[10px] text-slate-400 font-bold">NO MEDIA UPLOADED</div>`}
-                    <button class="w-full py-2 bg-white border border-slate-200 text-[10px] font-black rounded-lg hover:bg-slate-100 transition-all">VERIFY INCIDENT</button>
+                <div class="bg-white rounded-2xl p-4 border border-slate-200">
+                    <span class="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-full uppercase">${report.type}</span>
+                    <p class="text-xs text-slate-600 font-medium my-3">${report.details}</p>
+                    <button class="w-full py-2 bg-slate-100 text-[10px] font-black rounded-lg">ARCHIVE</button>
                 </div>
             `).join('');
 
-            // Update Counts
             document.getElementById('le-sos-count').innerText = appData.emergencyUsers.length;
             document.getElementById('le-reports-count').innerText = appData.reports.length;
             document.getElementById('le-vol-count').innerText = appData.volunteers.length;
         }
 
-        // Logic Overrides for Dynamic Data
         function toggleEmergencyMode() {
             emergencyMode = !emergencyMode;
             const btn = document.getElementById('emergency-toggle');
             const indicator = document.getElementById('emergency-indicator');
+            const supportCard = document.getElementById('threat-support-card');
             const silentAudio = document.getElementById('silent-audio');
 
             if (emergencyMode) {
                 btn.classList.add('emergency-btn-active');
                 indicator.classList.remove('hidden');
-                silentAudio.play().catch(e => console.log("Gesture required"));
-                // Add to LE Monitor
-                appData.emergencyUsers.push({ id: Math.floor(Math.random() * 9000) + 1000 });
-                showToast("Emergency Mode Active.");
+                silentAudio.play().catch(e => console.log("Gesture req"));
+                
+                // Randomly Assign a Volunteer
+                if (appData.volunteers.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * appData.volunteers.length);
+                    const volunteer = appData.volunteers[randomIndex];
+                    
+                    document.getElementById('assigned-vol-name').innerText = volunteer.name;
+                    document.getElementById('assigned-vol-phone').innerText = volunteer.phone;
+                    document.getElementById('assigned-vol-phone').href = `tel:${volunteer.phone}`;
+                    supportCard.classList.remove('hidden');
+
+                    // Push to data
+                    const newSos = { 
+                        id: 1001, 
+                        lat: 28.6139 + (Math.random() - 0.5) * 0.1, 
+                        lng: 77.209 + (Math.random() - 0.5) * 0.1, 
+                        time: "Live",
+                        assignedVol: volunteer 
+                    };
+                    appData.emergencyUsers.push(newSos);
+                } else {
+                    appData.emergencyUsers.push({ id: 1001, lat: 28.6139, lng: 77.209, time: "Live", assignedVol: null });
+                }
+
+                showToast("Threat Response: Volunteer Assigned. Police Notified.");
             } else {
                 btn.classList.remove('emergency-btn-active');
                 indicator.classList.add('hidden');
+                supportCard.classList.add('hidden');
                 silentAudio.pause();
-                // Remove from LE Monitor (simple demo logic)
-                appData.emergencyUsers = [];
+                appData.emergencyUsers = appData.emergencyUsers.filter(u => u.id !== 1001);
                 showToast("Emergency Mode Deactivated.");
             }
             if(currentView === 'le') renderLEPortal();
+            if(currentView === 'emergency-map') renderSosPortal();
         }
 
         function handleReportSubmit(e) {
             e.preventDefault();
-            const type = document.getElementById('report-type').value;
-            const details = document.getElementById('report-details').value;
-            const imgOutput = document.getElementById('img-output');
-            
             appData.reports.unshift({
-                type: type,
-                details: details,
-                img: imgOutput.classList.contains('hidden') ? null : imgOutput.src,
+                type: document.getElementById('report-type').value,
+                details: document.getElementById('report-details').value,
+                img: document.getElementById('img-output').src,
                 time: "Just Now"
             });
-
             closeReportModal();
-            showToast("Report transmitted to local precinct.");
-            e.target.reset();
-            imgOutput.classList.add('hidden');
-            document.getElementById('preview-text').classList.remove('hidden');
+            showToast("Report transmitted.");
             if(currentView === 'le') renderLEPortal();
         }
 
         function handleRegistration(e) {
             e.preventDefault();
-            const name = document.getElementById('vol-name').value;
-            const phone = document.getElementById('vol-phone').value;
-            
-            appData.volunteers.push({ name, phone });
+            const vol = { 
+                name: document.getElementById('vol-name').value, 
+                phone: document.getElementById('vol-phone').value 
+            };
+            appData.volunteers.push(vol);
             closeVolunteerModal();
             document.getElementById('on-call-status').classList.remove('hidden');
-            showToast("Watch Active: Registered as volunteer.");
+            showToast("Watch Active: You are now a potential responder.");
             if(currentView === 'le') renderLEPortal();
         }
 
-        // Standard Utility Functions
         function initMap() {
-            map = L.map('leaflet-map', { scrollWheelZoom: false }).setView([28.6139, 77.2090], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            if (!map) {
+                map = L.map('leaflet-map', { scrollWheelZoom: false }).setView([28.6139, 77.2090], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            }
         }
 
         async function handleMapReport(e) {
             e.preventDefault();
             const address = document.getElementById('map-address').value;
             const detail = document.getElementById('map-warning-detail').value;
-            const btn = document.getElementById('map-report-btn');
-            btn.disabled = true; btn.innerText = "...";
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&viewbox=76.8425,28.8813,77.5348,28.4055&bounded=1`);
                 const data = await response.json();
                 if (data && data.length > 0) {
                     const result = data[0];
-                    addWarningMarker(parseFloat(result.lat), parseFloat(result.lon), result.display_name.split(',')[0], detail);
+                    const warningIcon = L.divIcon({ className: 'warning-marker', html: '<div class="warning-icon-inner"><i class="fas fa-exclamation-triangle"></i></div>', iconSize: [30, 30], iconAnchor: [15, 15] });
+                    const marker = L.marker([parseFloat(result.lat), parseFloat(result.lon)], { icon: warningIcon }).addTo(map);
+                    marker.bindTooltip(`<div class="p-2 text-xs font-black uppercase">${result.display_name.split(',')[0]}<br><span class="font-medium normal-case opacity-70">${detail}</span></div>`);
                     map.flyTo([result.lat, result.lon], 15);
                     showToast("Warning pinned to Delhi Map.");
                     e.target.reset();
                 } else { showToast("Address not found."); }
-            } catch (err) { showToast("Error connecting."); } finally { btn.disabled = false; btn.innerText = "PIN WARNING"; }
-        }
-
-        function addWarningMarker(lat, lng, address, detail) {
-            const warningIcon = L.divIcon({ className: 'warning-marker', html: '<div class="warning-icon-inner"><i class="fas fa-exclamation-triangle"></i></div>', iconSize: [30, 30], iconAnchor: [15, 15] });
-            const marker = L.marker([lat, lng], { icon: warningIcon }).addTo(map);
-            marker.bindTooltip(`<div class="p-2 text-xs font-bold uppercase">${address}<br><span class="font-normal normal-case opacity-60">${detail}</span></div>`, { direction: 'top', className: 'rounded-xl shadow-lg border-none' });
+            } catch (err) { showToast("Network error."); }
         }
 
         function toggleGpsTracking() {
-            if (!("geolocation" in navigator)) return showToast("No GPS support.");
+            if (!("geolocation" in navigator)) return showToast("No GPS.");
             gpsTrackingMode = !gpsTrackingMode;
             const btn = document.getElementById('gps-toggle');
             if (gpsTrackingMode) {
@@ -594,29 +705,13 @@
                     if (userMarker) userMarker.setLatLng([p.coords.latitude, p.coords.longitude]);
                     else { userMarker = L.marker([p.coords.latitude, p.coords.longitude], { icon: gpsIcon }).addTo(map); map.flyTo([p.coords.latitude, p.coords.longitude], 15); }
                 });
-                showToast("GPS Active.");
+                showToast("GPS Tracking Enabled.");
             } else {
                 btn.classList.remove('gps-btn-active');
                 if (watchId) navigator.geolocation.clearWatch(watchId);
                 if (userMarker) map.removeLayer(userMarker); userMarker = null;
                 showToast("GPS Stopped.");
             }
-        }
-
-        window.addEventListener('volumechange', function() {
-            if (!emergencyMode) return;
-            const now = Date.now();
-            if (now - lastVolumePressTime < 1500) { volumePressCount++; } else { volumePressCount = 1; }
-            lastVolumePressTime = now;
-            if (volumePressCount >= 3) { triggerSirenAlert(); volumePressCount = 0; }
-        });
-
-        function triggerSirenAlert() {
-            let count = 0;
-            const interval = setInterval(() => { playSiren(); count++; if (count > 20) clearInterval(interval); }, 300);
-            showToast("⚠️ SIREN TRIGGERED!");
-            document.body.style.backgroundColor = "red";
-            setTimeout(() => { document.body.style.backgroundColor = ""; }, 5000);
         }
 
         function previewImage(e) {
@@ -636,7 +731,6 @@
         function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); }
         function openVolunteerModal() { document.getElementById('volunteerModal').classList.remove('hidden'); }
         function closeVolunteerModal() { document.getElementById('volunteerModal').classList.add('hidden'); }
-        function toggleMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
         function scrollToId(id) { const el = document.getElementById(id); if(el) window.scrollTo({top: el.offsetTop - 100, behavior: 'smooth'}); }
 
         window.onload = () => {
@@ -644,9 +738,9 @@
             // Default Alerts
             const grid = document.getElementById('alerts-grid');
             grid.innerHTML = [
-                { id: 1, title: "Phone Snatching", loc: "Karol Bagh", sev: "High", time: "20m ago", desc: "Two suspects on bike spotted.", color: "red" },
-                { id: 2, title: "Cyber Advisory", loc: "Delhi NCR", sev: "Mod", time: "1h ago", desc: "Fake WhatsApp OTP scam circulating.", color: "amber" }
-            ].map(a => `<div class="alert-card bg-white p-6 rounded-3xl border border-slate-100 shadow-sm"><span class="status-badge bg-${a.color}-100 text-${a.color}-700">${a.sev}</span><h3 class="font-black mt-2">${a.title}</h3><p class="text-[10px] text-slate-400 font-bold uppercase mb-4">${a.loc} • ${a.time}</p><p class="text-xs text-slate-500 font-medium">${a.desc}</p></div>`).join('');
+                { title: "Phone Snatching", loc: "Karol Bagh", sev: "High", time: "20m ago", desc: "Two suspects on bike spotted.", color: "red" },
+                { title: "Neighborhood Alert", loc: "Delhi NCR", sev: "Mod", time: "1h ago", desc: "Reported increase in suspicious door-to-door sales.", color: "amber" }
+            ].map(a => `<div class="alert-card bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm"><span class="status-badge bg-${a.color}-100 text-${a.color}-700">${a.sev}</span><h3 class="font-black mt-2 text-xl">${a.title}</h3><p class="text-[10px] text-slate-400 font-bold uppercase mb-4">${a.loc} • ${a.time}</p><p class="text-xs text-slate-500 font-medium">${a.desc}</p></div>`).join('');
         }
     </script>
 </body>
