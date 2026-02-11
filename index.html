@@ -444,12 +444,27 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // --- PRODUCTION CONFIGURATION ---
+        const fallbackConfig = {
+            apiKey: "AIzaSyAWh2RWD7DRJenPhg-_F3SrbTt9ZvfMb58",
+            authDomain: "codecraft-ba355.firebaseapp.com",
+            projectId: "codecraft-ba355",
+            storageBucket: "codecraft-ba355.firebasestorage.app",
+            messagingSenderId: "462067380594",
+            appId: "1:462067380594:web:0f94e2c2b9d60bbc236deb",
+            measurementId: "G-RGJ5TDG7KM"
+        };
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-hub';
+        const analytics = getAnalytics(app);
+        
+        // App ID determines the Firestore path
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-production-v1';
 
         let user = null;
         let map, sosMap;
@@ -460,21 +475,27 @@
         let volunteersList = [];
         let sosMarkers = {};
 
-        // Helper for Firestore Paths
+        // Helper for Firestore Paths (Rule 1)
         const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
 
-        // Auth initialization
+        // Auth initialization (Rule 3)
         const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Firebase Auth Error:", err);
+                window.showToast("Connection Error. Check Firebase Console Settings.");
             }
         };
 
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
+                console.log("Authenticated as:", u.uid);
                 setupListeners();
                 setupMaps();
             }
@@ -487,14 +508,14 @@
             onSnapshot(getColl('volunteers'), (snap) => {
                 volunteersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderLePortal();
-            }, (err) => console.error(err));
+            }, (err) => console.error("Firestore Listen Error (Volunteers):", err));
 
             // Sync SOS Signals
             onSnapshot(getColl('sos_signals'), (snap) => {
                 const signals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderSosSignals(signals);
                 renderLePortal(signals);
-            }, (err) => console.error(err));
+            }, (err) => console.error("Firestore Listen Error (SOS):", err));
 
             // Sync Chat
             onSnapshot(getColl('messages'), (snap) => {
@@ -509,7 +530,7 @@
                     </div>
                 `).join('');
                 container.scrollTop = container.scrollHeight;
-            }, (err) => console.error(err));
+            }, (err) => console.error("Firestore Listen Error (Chat):", err));
         };
 
         const setupMaps = () => {
@@ -524,19 +545,28 @@
             if (!user) return;
             const name = document.getElementById('vol-name').value;
             const phone = document.getElementById('vol-phone').value;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid), {
-                name, phone, uid: user.uid, joinedAt: Timestamp.now()
-            });
-            window.closeVolunteerModal();
-            document.getElementById('on-call-status').classList.remove('hidden');
-            window.showToast("Registered as On-Call Volunteer.");
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid), {
+                    name, phone, uid: user.uid, joinedAt: Timestamp.now()
+                });
+                window.closeVolunteerModal();
+                document.getElementById('on-call-status').classList.remove('hidden');
+                window.showToast("Registered as On-Call Volunteer.");
+            } catch (err) {
+                console.error("Firestore Write Error:", err);
+                window.showToast("Update failed. Check Firestore Rules.");
+            }
         };
 
         window.handleLeaveOnCall = async () => {
             if (!user) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid));
-            document.getElementById('on-call-status').classList.add('hidden');
-            window.showToast("Left On-Call pool.");
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid));
+                document.getElementById('on-call-status').classList.add('hidden');
+                window.showToast("Left On-Call pool.");
+            } catch (err) {
+                window.showToast("Error removing status.");
+            }
         };
 
         window.toggleEmergencyMode = async () => {
@@ -551,7 +581,6 @@
                 btn.classList.add('emergency-btn-active');
                 indicator.classList.remove('hidden');
                 
-                // Assign a random volunteer if available
                 let volunteer = null;
                 if (volunteersList.length > 0) {
                     volunteer = volunteersList[Math.floor(Math.random() * volunteersList.length)];
@@ -561,14 +590,18 @@
                     card.classList.remove('hidden');
                 }
 
-                await setDoc(sosRef, {
-                    uid: user.uid,
-                    lat: 28.6139 + (Math.random() - 0.5) * 0.1, // Simulated current location
-                    lng: 77.2090 + (Math.random() - 0.5) * 0.1,
-                    volunteer: volunteer || null,
-                    timestamp: Timestamp.now()
-                });
-                window.showToast("SOS Broadcast Active.");
+                try {
+                    await setDoc(sosRef, {
+                        uid: user.uid,
+                        lat: 28.6139 + (Math.random() - 0.5) * 0.1,
+                        lng: 77.2090 + (Math.random() - 0.5) * 0.1,
+                        volunteer: volunteer || null,
+                        timestamp: Timestamp.now()
+                    });
+                    window.showToast("SOS Broadcast Active.");
+                } catch (err) {
+                    window.showToast("SOS Signal Failed. Check Firestore Path Rules.");
+                }
             } else {
                 btn.classList.remove('emergency-btn-active');
                 indicator.classList.add('hidden');
@@ -583,20 +616,23 @@
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text) return;
-            await addDoc(getColl('messages'), {
-                text,
-                uid: user.uid,
-                name: user.uid.slice(-4),
-                sentAt: Timestamp.now()
-            });
-            input.value = '';
+            try {
+                await addDoc(getColl('messages'), {
+                    text,
+                    uid: user.uid,
+                    name: user.uid.slice(-4),
+                    sentAt: Timestamp.now()
+                });
+                input.value = '';
+            } catch (err) {
+                window.showToast("Chat disabled. Check Rules.");
+            }
         };
 
         window.handleMapReport = (e) => {
             e.preventDefault();
             const addr = document.getElementById('map-address').value;
             const detail = document.getElementById('map-warning-detail').value;
-            // Simulated Geocoding
             const center = map.getCenter();
             const marker = L.marker([center.lat + (Math.random()-0.5)*0.02, center.lng + (Math.random()-0.5)*0.02], {
                 icon: L.divIcon({ className: 'warning-marker', html: '<div class="warning-icon-inner"><i class="fas fa-exclamation-triangle"></i></div>' })
@@ -613,11 +649,11 @@
             if (gpsTrackingMode) {
                 btn.classList.add('gps-btn-active');
                 indicator.classList.remove('hidden');
-                window.showToast("Simulated GPS Tracking Started.");
+                window.showToast("GPS Tracking Active.");
             } else {
                 btn.classList.remove('gps-btn-active');
                 indicator.classList.add('hidden');
-                window.showToast("Tracking Ended.");
+                window.showToast("Tracking Stopped.");
             }
         };
 
