@@ -441,6 +441,29 @@
     </div>
 
     <script type="module">
+        /*
+        ========================================================================
+        FIREBASE SETUP GUIDE (READ THIS TO FIX ERRORS)
+        ========================================================================
+        1. ENABLE ANONYMOUS AUTH:
+           Go to Firebase Console > Build > Authentication > Sign-in method.
+           Enable "Anonymous". Without this, data cannot be saved.
+
+        2. SET FIRESTORE SECURITY RULES:
+           Go to Firebase Console > Build > Firestore Database > Rules.
+           Paste these rules (Important: The path must match your appId):
+           
+           rules_version = '2';
+           service cloud.firestore {
+             match /databases/{database}/documents {
+               match /artifacts/{appId}/public/data/{collectionName}/{docId} {
+                 allow read, write: if request.auth != null;
+               }
+             }
+           }
+        ========================================================================
+        */
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -461,7 +484,14 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const analytics = getAnalytics(app);
+        
+        // MeasurementId is optional but analytics requires it if present
+        let analytics;
+        try {
+            analytics = getAnalytics(app);
+        } catch (e) {
+            console.warn("Analytics failed to initialize.");
+        }
         
         // App ID determines the Firestore path
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-production-v1';
@@ -484,18 +514,19 @@
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
+                    // Falls back to Anonymous. ENSURE THIS IS ENABLED IN FIREBASE CONSOLE!
                     await signInAnonymously(auth);
                 }
             } catch (err) {
                 console.error("Firebase Auth Error:", err);
-                window.showToast("Connection Error. Check Firebase Console Settings.");
+                window.showToast("Auth Error. Enable 'Anonymous' in Firebase Console.");
             }
         };
 
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
-                console.log("Authenticated as:", u.uid);
+                console.log("Logged in as:", u.uid);
                 setupListeners();
                 setupMaps();
             }
@@ -508,14 +539,17 @@
             onSnapshot(getColl('volunteers'), (snap) => {
                 volunteersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderLePortal();
-            }, (err) => console.error("Firestore Listen Error (Volunteers):", err));
+            }, (err) => {
+                console.error("Volunteers sync failed:", err);
+                if (err.code === 'permission-denied') window.showToast("Sync Error: Fix Firestore Rules.");
+            });
 
             // Sync SOS Signals
             onSnapshot(getColl('sos_signals'), (snap) => {
                 const signals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderSosSignals(signals);
                 renderLePortal(signals);
-            }, (err) => console.error("Firestore Listen Error (SOS):", err));
+            }, (err) => console.error("SOS sync error:", err));
 
             // Sync Chat
             onSnapshot(getColl('messages'), (snap) => {
@@ -530,7 +564,11 @@
                     </div>
                 `).join('');
                 container.scrollTop = container.scrollHeight;
-            }, (err) => console.error("Firestore Listen Error (Chat):", err));
+            }, (err) => {
+                console.error("Chat sync error:", err);
+                const container = document.getElementById('message-container');
+                container.innerHTML = `<div class="p-4 text-center text-red-500 text-xs font-bold">Chat Disabled: Update Firestore Rules</div>`;
+            });
         };
 
         const setupMaps = () => {
@@ -553,8 +591,8 @@
                 document.getElementById('on-call-status').classList.remove('hidden');
                 window.showToast("Registered as On-Call Volunteer.");
             } catch (err) {
-                console.error("Firestore Write Error:", err);
-                window.showToast("Update failed. Check Firestore Rules.");
+                console.error("Volunteer Registration Error:", err);
+                window.showToast("Registration Failed: Update Firestore Rules.");
             }
         };
 
@@ -565,12 +603,15 @@
                 document.getElementById('on-call-status').classList.add('hidden');
                 window.showToast("Left On-Call pool.");
             } catch (err) {
-                window.showToast("Error removing status.");
+                window.showToast("Error updating status.");
             }
         };
 
         window.toggleEmergencyMode = async () => {
-            if (!user) return;
+            if (!user) {
+                window.showToast("Waiting for secure connection...");
+                return;
+            }
             emergencyMode = !emergencyMode;
             const btn = document.getElementById('emergency-toggle');
             const indicator = document.getElementById('emergency-indicator');
@@ -600,19 +641,28 @@
                     });
                     window.showToast("SOS Broadcast Active.");
                 } catch (err) {
-                    window.showToast("SOS Signal Failed. Check Firestore Path Rules.");
+                    console.error("SOS Write Error:", err);
+                    window.showToast("SOS Failed: Fix Firestore Rules.");
+                    emergencyMode = false;
+                    btn.classList.remove('emergency-btn-active');
+                    indicator.classList.add('hidden');
                 }
             } else {
                 btn.classList.remove('emergency-btn-active');
                 indicator.classList.add('hidden');
                 card.classList.add('hidden');
-                await deleteDoc(sosRef);
-                window.showToast("SOS Signal Terminated.");
+                try {
+                    await deleteDoc(sosRef);
+                    window.showToast("SOS Signal Terminated.");
+                } catch (e) {}
             }
         };
 
         window.sendMessage = async () => {
-            if (!user) return;
+            if (!user) {
+                window.showToast("Not connected to server.");
+                return;
+            }
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text) return;
@@ -625,13 +675,13 @@
                 });
                 input.value = '';
             } catch (err) {
-                window.showToast("Chat disabled. Check Rules.");
+                console.error("Chat send error:", err);
+                window.showToast("Message failed: Fix Firestore Rules.");
             }
         };
 
         window.handleMapReport = (e) => {
             e.preventDefault();
-            const addr = document.getElementById('map-address').value;
             const detail = document.getElementById('map-warning-detail').value;
             const center = map.getCenter();
             const marker = L.marker([center.lat + (Math.random()-0.5)*0.02, center.lng + (Math.random()-0.5)*0.02], {
@@ -735,7 +785,7 @@
             const t = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
+            setTimeout(() => t.classList.add('hidden'), 5000);
         };
         window.handleReportSubmit = (e) => {
             e.preventDefault();
