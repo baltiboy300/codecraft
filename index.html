@@ -537,7 +537,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, query, onSnapshot, getDocs, Timestamp, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Constants
+        // Global Configuration
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -545,7 +545,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-india';
         const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Reactive State
+        // Shared State
         let currentUser = null;
         let activeChatId = null;
         let chatsUnsubscribe = null;
@@ -556,39 +556,35 @@
         let watchId = null;
         let userMarker = null;
         let sosMarkers = {};
-
-        // Local data cache for assignment logic
+        
         const appData = { reports: [], emergencyUsers: [], volunteers: [] };
 
-        // Firebase Initializer
-        const initAuth = async () => {
-            try {
-                if (initialToken) {
-                    await signInWithCustomToken(auth, initialToken).catch(() => signInAnonymously(auth));
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (e) { console.error("Auth error", e); }
+        // Helper: Strict Path Rule 1
+        const getPublicCollection = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
 
+        // --- Core Authentication ---
+        const initAuth = async () => {
+            if (initialToken) {
+                await signInWithCustomToken(auth, initialToken).catch(() => signInAnonymously(auth));
+            } else {
+                await signInAnonymously(auth);
+            }
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
                 if(user) {
                     setupChatListeners();
                     setupVolunteerSync();
+                    setupMapAndMisc();
                 }
             });
         };
         initAuth();
 
-        // RULE 1 Helpers
-        const getPublicRef = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
-
-        // --- Volunteer Logic ---
+        // --- Volunteer Sync ---
         const setupVolunteerSync = () => {
-            if (!currentUser) return;
-            onSnapshot(getPublicRef('volunteers'), (snapshot) => {
+            onSnapshot(getPublicCollection('volunteers'), (snapshot) => {
                 appData.volunteers = snapshot.docs.map(d => d.data());
-                if(window.currentView === 'le') renderLEPortal();
+                if(window.currentView === 'le') window.renderLEPortal();
             });
         };
 
@@ -607,7 +603,7 @@
             document.getElementById('vol-action-container').innerHTML = `
                 <button onclick="window.handleLeaveOnCall()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-xl text-xs font-black uppercase">Leave Call Pool</button>
             `;
-            window.showToast("On call status activated.");
+            window.showToast("On-call status activated.");
         };
 
         window.handleLeaveOnCall = async () => {
@@ -619,17 +615,17 @@
             document.getElementById('vol-action-container').innerHTML = `
                 <button onclick="window.openVolunteerModal()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold shadow-xl transition-all">Join Program</button>
             `;
-            window.showToast("You have left the active pool.");
+            window.showToast("Left the active responder pool.");
         };
 
         // --- Chat Logic ---
         const setupChatListeners = () => {
-            onSnapshot(getPublicRef('chats'), (snapshot) => {
+            onSnapshot(getPublicCollection('chats'), (snapshot) => {
                 const chats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderChatRooms(chats);
                 const btn = document.getElementById('create-chat-btn');
                 if (btn) btn.disabled = chats.length >= 5;
-            }, (err) => console.error("Chat sync error:", err));
+            });
         };
 
         const renderChatRooms = (chats) => {
@@ -649,18 +645,15 @@
 
         window.createNewChat = async () => {
             if (!currentUser) return;
-            const name = prompt("Enter Chat Name:");
+            const name = prompt("Enter Chat Room Name (Max 20 chars):");
             if (!name) return;
-            const chats = await getDocs(getPublicRef('chats'));
-            if(chats.size >= 5) {
+            const chatsSnapshot = await getDocs(getPublicRef('chats'));
+            if(chatsSnapshot.size >= 5) {
                 window.showToast("Maximum of 5 chats reached.");
                 return;
             }
-            await addDoc(getPublicRef('chats'), { 
-                name: name.substring(0, 20), 
-                createdAt: Timestamp.now()
-            });
-            window.showToast("Chat Created.");
+            await addDoc(getPublicCollection('chats'), { name: name.substring(0, 20), createdAt: Timestamp.now() });
+            window.showToast("Chat created.");
         };
 
         window.joinChat = (id, name) => {
@@ -682,8 +675,7 @@
         const setupMessageListener = () => {
             if (!activeChatId) return;
             if (messagesUnsubscribe) messagesUnsubscribe();
-            // RULE 1: Use a top-level collection for messages and filter in JS (Rule 2)
-            messagesUnsubscribe = onSnapshot(getPublicRef('messages'), (snapshot) => {
+            messagesUnsubscribe = onSnapshot(getPublicCollection('messages'), (snapshot) => {
                 const messages = snapshot.docs
                     .map(doc => doc.data())
                     .filter(msg => msg.chatId === activeChatId)
@@ -697,7 +689,7 @@
             if (!container) return;
             container.innerHTML = messages.map(msg => `
                 <div class="flex flex-col ${msg.senderId === currentUser?.uid ? 'items-end' : 'items-start'}">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">${msg.senderName || 'Anonymous'}</p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">${msg.senderName || 'User'}</p>
                     <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${msg.senderId === currentUser?.uid ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-slate-100 text-slate-700 rounded-tl-none'}">
                         ${msg.text}
                     </div>
@@ -710,7 +702,7 @@
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text || !activeChatId || !currentUser) return;
-            await addDoc(getPublicRef('messages'), {
+            await addDoc(getPublicCollection('messages'), {
                 chatId: activeChatId,
                 text,
                 senderId: currentUser.uid,
@@ -720,7 +712,7 @@
             input.value = '';
         };
 
-        // --- SOS & Map Logic ---
+        // --- Emergency & Misc ---
         window.toggleEmergencyMode = () => {
             emergencyMode = !emergencyMode;
             const btn = document.getElementById('emergency-toggle');
@@ -731,7 +723,6 @@
                 btn.classList.add('emergency-btn-active');
                 indicator.classList.remove('hidden');
                 
-                // logic for random volunteer assignment
                 if (appData.volunteers.length > 0) {
                     const volunteer = appData.volunteers[Math.floor(Math.random() * appData.volunteers.length)];
                     document.getElementById('assigned-vol-name').innerText = volunteer.name;
@@ -740,7 +731,7 @@
                     supportCard.classList.remove('hidden');
                     appData.emergencyUsers.push({ id: 1001, lat: 28.6139, lng: 77.209, time: "Live", assignedVol: volunteer });
                 }
-                window.showToast("Emergency Active. Dispatch Notification Sent.");
+                window.showToast("Emergency Active. Contacting volunteer pool.");
             } else {
                 btn.classList.remove('emergency-btn-active');
                 indicator.classList.add('hidden');
@@ -748,7 +739,7 @@
                 appData.emergencyUsers = [];
                 window.showToast("Emergency mode ended.");
             }
-            if(window.currentView === 'le') renderLEPortal();
+            if(window.currentView === 'le') window.renderLEPortal();
             if(window.currentView === 'emergency-map') renderSosPortal();
         };
 
@@ -768,7 +759,7 @@
                     window.showToast("Area warning pinned.");
                     e.target.reset();
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { window.showToast("Search failed."); }
         };
 
         window.toggleGpsTracking = () => {
@@ -781,35 +772,13 @@
                     if (userMarker) userMarker.setLatLng([p.coords.latitude, p.coords.longitude]);
                     else { userMarker = L.marker([p.coords.latitude, p.coords.longitude], { icon }).addTo(map); map.flyTo([p.coords.latitude, p.coords.longitude], 15); }
                 });
-                window.showToast("Live tracking active.");
+                window.showToast("Live GPS tracking active.");
             } else {
                 btn.classList.remove('gps-btn-active');
                 if (watchId) navigator.geolocation.clearWatch(watchId);
                 if (userMarker) map.removeLayer(userMarker); userMarker = null;
+                window.showToast("Tracking stopped.");
             }
-        };
-
-        // UI View Switcher
-        window.currentView = 'citizen';
-        window.switchView = (view) => {
-            window.currentView = view;
-            const views = ['citizen-view', 'le-view', 'emergency-map-view'];
-            views.forEach(v => document.getElementById(v).classList.add('hidden'));
-            
-            const target = view === 'le' ? 'le-view' : (view === 'emergency-map' ? 'emergency-map-view' : 'citizen-view');
-            document.getElementById(target).classList.remove('hidden');
-            
-            if(view === 'emergency-map') initSosMap();
-            if(view === 'le') renderLEPortal();
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        };
-
-        const initSosMap = () => {
-            if (!sosMap) {
-                sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 11);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
-            }
-            setTimeout(() => sosMap.invalidateSize(), 200);
         };
 
         const renderSosPortal = () => {
@@ -819,14 +788,14 @@
             sosMarkers = {};
 
             if (appData.emergencyUsers.length === 0) {
-                list.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">Monitoring...</div>';
+                list.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">Clear frequency.</div>';
                 return;
             }
 
             appData.emergencyUsers.forEach(user => {
                 const div = document.createElement('div');
                 div.className = "p-4 bg-white border rounded-2xl cursor-pointer hover:border-red-500 transition-all";
-                div.innerHTML = `<p class="text-xs font-black text-red-600">ID: ${user.id}</p><p class="text-[10px]">${user.assignedVol ? `Escort: ${user.assignedVol.name}` : 'Scanning...'}</p>`;
+                div.innerHTML = `<p class="text-xs font-black text-red-600 tracking-tighter">CITIZEN ID: ${user.id}</p><p class="text-[10px] mt-1 text-slate-500 font-bold">${user.assignedVol ? `Assigned: ${user.assignedVol.name}` : 'Awaiting...'}</p>`;
                 div.onclick = () => sosMap.flyTo([user.lat, user.lng], 15);
                 list.appendChild(div);
 
@@ -837,31 +806,63 @@
             });
         };
 
-        const renderLEPortal = () => {
-            document.getElementById('le-sos-count').innerText = appData.emergencyUsers.length;
-            document.getElementById('le-vol-count').innerText = appData.volunteers.length;
+        window.renderLEPortal = () => {
+            const sosCountEl = document.getElementById('le-sos-count');
+            const volCountEl = document.getElementById('le-vol-count');
+            if (sosCountEl) sosCountEl.innerText = appData.emergencyUsers.length;
+            if (volCountEl) volCountEl.innerText = appData.volunteers.length;
             
             const sosList = document.getElementById('le-sos-list');
-            if (appData.emergencyUsers.length === 0) {
-                sosList.innerHTML = `<div class="p-8 text-center text-slate-400 italic text-sm">Clear - No active threats.</div>`;
-            } else {
-                sosList.innerHTML = appData.emergencyUsers.map(user => `
-                    <div class="p-4 flex justify-between items-center bg-red-50/50">
-                        <span class="text-xs font-black">Citizen ${user.id}</span>
-                        <button onclick="window.switchView('emergency-map')" class="text-[10px] bg-slate-900 text-white px-3 py-1 rounded-lg font-bold">TRACK</button>
-                    </div>
-                `).join('');
+            if (sosList) {
+                if (appData.emergencyUsers.length === 0) {
+                    sosList.innerHTML = `<div class="p-8 text-center text-slate-400 italic text-sm">No active threats detected.</div>`;
+                } else {
+                    sosList.innerHTML = appData.emergencyUsers.map(user => `
+                        <div class="p-4 flex justify-between items-center bg-red-50/50">
+                            <span class="text-xs font-black uppercase tracking-widest">User ID: ${user.id}</span>
+                            <button onclick="window.switchView('emergency-map')" class="text-[10px] bg-slate-900 text-white px-3 py-1 rounded-lg font-bold">MONITOR</button>
+                        </div>
+                    `).join('');
+                }
             }
         };
 
-        // UI Event Handlers
+        const setupMapAndMisc = () => {
+            if (!map) {
+                map = L.map('leaflet-map', { scrollWheelZoom: false }).setView([28.6139, 77.2090], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            }
+        };
+
+        // UI Event Handlers (Attached to window)
+        window.currentView = 'citizen';
+        window.switchView = (view) => {
+            window.currentView = view;
+            const views = ['citizen-view', 'le-view', 'emergency-map-view'];
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            
+            const target = view === 'le' ? 'le-view' : (view === 'emergency-map' ? 'emergency-map-view' : 'citizen-view');
+            document.getElementById(target).classList.remove('hidden');
+            
+            if(view === 'emergency-map') {
+                if (!sosMap) {
+                    sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 11);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
+                }
+                setTimeout(() => sosMap.invalidateSize(), 200);
+                renderSosPortal();
+            }
+            if(view === 'le') window.renderLEPortal();
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        };
+
         window.toggleChat = () => {
             const panel = document.getElementById('chat-panel');
             panel.classList.toggle('hidden');
             if(!panel.classList.contains('hidden')) {
                 if(!localStorage.getItem('saavadhan_name')) {
-                    const entered = prompt("Chat Display Name:");
-                    localStorage.setItem('saavadhan_name', entered || 'Citizen');
+                    const entered = prompt("Enter Chat Display Name:");
+                    localStorage.setItem('saavadhan_name', entered || 'Anonymous Citizen');
                 }
             }
         };
@@ -873,12 +874,22 @@
         window.scrollToId = (id) => { const el = document.getElementById(id); if(el) window.scrollTo({top: el.offsetTop - 100, behavior: 'smooth'}); };
         window.showToast = (msg) => { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3500); };
         window.previewImage = (e) => { const reader = new FileReader(); reader.onload = () => { const out = document.getElementById('img-output'); out.src = reader.result; out.classList.remove('hidden'); document.getElementById('preview-text').classList.add('hidden'); }; reader.readAsDataURL(e.target.files[0]); };
-        window.handleReportSubmit = (e) => { e.preventDefault(); window.closeReportModal(); window.showToast("Report submitted."); };
+        window.handleReportSubmit = (e) => { e.preventDefault(); window.closeReportModal(); window.showToast("Incident report successfully logged."); };
 
-        window.onload = () => {
-            map = L.map('leaflet-map', { scrollWheelZoom: false }).setView([28.6139, 77.2090], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        };
+        // SOS Volume Hack
+        let lastV = 0;
+        window.addEventListener('volumechange', () => {
+            if (!emergencyMode) return;
+            const now = Date.now();
+            if (now - lastV < 1500) { volumePressCount++; } else { volumePressCount = 1; }
+            lastV = now;
+            if (volumePressCount >= 3) {
+                const i = setInterval(() => { playSiren(); }, 300);
+                setTimeout(() => clearInterval(i), 5000);
+                window.showToast("⚠️ SIREN ACTIVATED!");
+                volumePressCount = 0;
+            }
+        });
     </script>
 </body>
 </html>
