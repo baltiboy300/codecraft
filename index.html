@@ -25,14 +25,6 @@
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
         }
 
-        .alert-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .alert-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
         .nav-link {
             position: relative;
             transition: color 0.3s ease;
@@ -94,32 +86,6 @@
             animation: bounce 2s infinite;
         }
 
-        /* GPS Marker Icon */
-        .user-gps-marker {
-            background: none;
-            border: none;
-        }
-        .gps-icon-inner {
-            width: 20px;
-            height: 20px;
-            background: #3b82f6;
-            border: 3px solid white;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
-            position: relative;
-        }
-        .gps-icon-inner::after {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            border-radius: 50%;
-            border: 2px solid #3b82f6;
-            animation: gps-pulse 2s infinite;
-        }
-
         /* SOS Marker Icon */
         .sos-gps-marker {
             background: none;
@@ -161,7 +127,6 @@
             50% { transform: translateY(-5px); }
         }
 
-        /* Emergency Mode Visuals */
         .emergency-btn-active {
             background-color: #ef4444 !important;
             color: white !important;
@@ -175,10 +140,8 @@
             box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
         }
 
-        /* Chat Widget Styling */
         #chat-widget {
             z-index: 100;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .chat-panel {
             height: 500px;
@@ -208,10 +171,6 @@
             overflow: hidden;
             transition: all 0.2s ease;
             position: relative;
-        }
-        .photo-preview:hover {
-            border-color: #94a3b8;
-            background: #f1f5f9;
         }
         .photo-preview img {
             width: 100%;
@@ -442,7 +401,6 @@
                 <button onclick="window.closeReportModal()"><i class="fas fa-times text-xl text-slate-400"></i></button>
             </div>
             <form onsubmit="window.handleReportSubmit(event)" class="space-y-6">
-                <!-- Image Upload Section -->
                 <div class="space-y-2">
                     <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Photo Evidence (Optional)</label>
                     <div id="incident-photo-container" class="photo-preview" onclick="document.getElementById('incident-photo-input').click()">
@@ -457,18 +415,9 @@
                     </div>
                     <input type="file" id="incident-photo-input" class="hidden" accept="image/*" onchange="window.handlePhotoSelect(this)">
                 </div>
-
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Incident Type</label>
-                    <input id="incident-type" type="text" placeholder="e.g. Theft, Harassment" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
-                </div>
-
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Details</label>
-                    <textarea id="incident-details" placeholder="Describe the situation..." rows="3" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
-                </div>
-                
-                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-red-700 transition-all">LOG ENCRYPTED REPORT</button>
+                <input id="incident-type" type="text" placeholder="Incident Type" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
+                <textarea id="incident-details" placeholder="Details..." rows="3" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black shadow-lg">LOG ENCRYPTED REPORT</button>
             </form>
         </div>
     </div>
@@ -494,9 +443,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURATION ---
+        // --- FIREBASE CONFIGURATION ---
         const fallbackConfig = {
             apiKey: "AIzaSyAWh2RWD7DRJenPhg-_F3SrbTt9ZvfMb58",
             authDomain: "codecraft-ba355.firebaseapp.com",
@@ -510,20 +459,24 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-v2';
+        
+        // Critical: Use environment appId to match Firestore Rules
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-production-v2';
 
         let user = null;
         let map, sosMap;
         let emergencyMode = false;
-        let gpsTrackingMode = false;
         let volunteersList = [];
         let sosMarkers = {};
         let currentIncidentImageData = null;
 
-        // Helper for Firestore Paths (Rule 1)
+        // Path Rule 1: /artifacts/{appId}/public/data/{collectionName}
         const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
 
-        // Auth initialization
+        // Path Rule 1 (Document): /artifacts/{appId}/public/data/{collectionName}/{docId}
+        const getDocRef = (coll, id) => doc(db, 'artifacts', appId, 'public', 'data', coll, id);
+
+        // Authentication & Initialization
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -532,29 +485,44 @@
                     await signInAnonymously(auth);
                 }
             } catch (err) {
-                console.error("Firebase Auth Error:", err);
+                console.error("Auth Failure:", err);
+                window.showToast("Connection Error. Please check settings.");
             }
         };
 
+        // Listen for auth state before starting listeners (Rule 3)
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
+                console.log("App ready for user:", u.uid);
                 setupListeners();
                 setupMaps();
+            } else {
+                console.warn("Waiting for authentication...");
             }
         });
 
         const setupListeners = () => {
             if (!user) return;
+            
+            // Sync Volunteers
             onSnapshot(getColl('volunteers'), (snap) => {
                 volunteersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderLePortal();
+            }, (err) => {
+                console.error("Volunteers Listen Error:", err);
             });
+
+            // Sync SOS Signals
             onSnapshot(getColl('sos_signals'), (snap) => {
                 const signals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderSosSignals(signals);
                 renderLePortal(signals);
+            }, (err) => {
+                console.error("SOS Listen Error:", err);
             });
+
+            // Sync Chat (Sort in memory - Rule 2)
             onSnapshot(getColl('messages'), (snap) => {
                 const msgs = snap.docs.map(d => d.data()).sort((a,b) => a.sentAt - b.sentAt);
                 const container = document.getElementById('message-container');
@@ -567,6 +535,9 @@
                     </div>
                 `).join('');
                 container.scrollTop = container.scrollHeight;
+            }, (err) => {
+                console.error("Chat Listen Error:", err);
+                document.getElementById('message-container').innerHTML = `<div class="p-4 text-center text-xs text-red-500 font-bold">Chat offline. Check Firestore Rules.</div>`;
             });
         };
 
@@ -577,27 +548,17 @@
             }
         };
 
-        // --- PHOTO HANDLING LOGIC ---
         window.handlePhotoSelect = (input) => {
             const file = input.files[0];
             if (!file) return;
-
-            if (!file.type.startsWith('image/')) {
-                window.showToast("Please select an image file.");
-                return;
-            }
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 currentIncidentImageData = e.target.result;
                 const previewImg = document.getElementById('photo-preview-img');
-                const placeholder = document.getElementById('photo-placeholder-content');
-                const removeBtn = document.getElementById('remove-photo-btn');
-
                 previewImg.src = e.target.result;
                 previewImg.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-                removeBtn.classList.remove('hidden');
+                document.getElementById('photo-placeholder-content').classList.add('hidden');
+                document.getElementById('remove-photo-btn').classList.remove('hidden');
             };
             reader.readAsDataURL(file);
         };
@@ -613,52 +574,50 @@
 
         window.handleReportSubmit = async (e) => {
             e.preventDefault();
-            if (!user) return;
-
-            const type = document.getElementById('incident-type').value;
-            const details = document.getElementById('incident-details').value;
-
+            if (!user) { window.showToast("Reconnecting..."); return; }
             try {
-                // In a real app, you would upload currentIncidentImageData to Firebase Storage
-                // and save the URL in the document. Here we simulate the log.
                 await addDoc(getColl('reports'), {
                     uid: user.uid,
-                    type,
-                    details,
-                    hasImage: !!currentIncidentImageData,
+                    type: document.getElementById('incident-type').value,
+                    details: document.getElementById('incident-details').value,
                     timestamp: Timestamp.now()
                 });
-
-                window.showToast("Report logged successfully with evidence.");
+                window.showToast("Incident report logged.");
                 window.closeReportModal();
                 e.target.reset();
-                window.clearIncidentPhoto();
             } catch (err) {
-                window.showToast("Error logging report.");
+                console.error("Report Save Error:", err);
+                window.showToast("Report failed. Ensure Firestore rules allow writes.");
             }
         };
 
-        // UI Handlers
         window.handleRegistration = async (e) => {
             e.preventDefault();
-            const name = document.getElementById('vol-name').value;
-            const phone = document.getElementById('vol-phone').value;
+            if (!user) { window.showToast("Connecting..."); return; }
             try {
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid), {
-                    name, phone, uid: user.uid, joinedAt: Timestamp.now()
+                await setDoc(getDocRef('volunteers', user.uid), {
+                    name: document.getElementById('vol-name').value,
+                    phone: document.getElementById('vol-phone').value,
+                    uid: user.uid,
+                    joinedAt: Timestamp.now()
                 });
                 window.closeVolunteerModal();
                 document.getElementById('on-call-status').classList.remove('hidden');
-                window.showToast("Now On Call.");
-            } catch (err) { window.showToast("Registration failed."); }
+                window.showToast("Successfully registered.");
+            } catch (err) {
+                console.error("Vol Reg Error:", err);
+                window.showToast("Registration failed. Check rules.");
+            }
         };
 
-        window.handleLeaveOnCall = async () => {
+        window.sendMessage = async () => {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text || !user) return;
             try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid));
-                document.getElementById('on-call-status').classList.add('hidden');
-                window.showToast("Left On-Call pool.");
-            } catch (e) {}
+                await addDoc(getColl('messages'), { text, uid: user.uid, name: user.uid.slice(-4), sentAt: Timestamp.now() });
+                input.value = '';
+            } catch (err) { window.showToast("Message failed."); }
         };
 
         window.toggleEmergencyMode = async () => {
@@ -667,12 +626,12 @@
             const btn = document.getElementById('emergency-toggle');
             const indicator = document.getElementById('emergency-indicator');
             const card = document.getElementById('threat-support-card');
-            const sosRef = doc(db, 'artifacts', appId, 'public', 'data', 'sos_signals', user.uid);
+            const sosRef = getDocRef('sos_signals', user.uid);
 
             if (emergencyMode) {
                 btn.classList.add('emergency-btn-active');
                 indicator.classList.remove('hidden');
-                let vol = volunteersList.length > 0 ? volunteersList[Math.floor(Math.random() * volunteersList.length)] : null;
+                let vol = volunteersList[Math.floor(Math.random() * volunteersList.length)] || null;
                 if (vol) {
                     document.getElementById('assigned-vol-name').innerText = vol.name;
                     document.getElementById('assigned-vol-phone').innerText = vol.phone;
@@ -680,7 +639,7 @@
                     card.classList.remove('hidden');
                 }
                 await setDoc(sosRef, { uid: user.uid, lat: 28.6139 + (Math.random()-0.5)*0.1, lng: 77.2090 + (Math.random()-0.5)*0.1, volunteer: vol, timestamp: Timestamp.now() });
-                window.showToast("SOS Broadcast Active.");
+                window.showToast("SOS Signal Active.");
             } else {
                 btn.classList.remove('emergency-btn-active');
                 indicator.classList.add('hidden');
@@ -689,28 +648,20 @@
             }
         };
 
-        window.sendMessage = async () => {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text || !user) return;
-            await addDoc(getColl('messages'), { text, uid: user.uid, name: user.uid.slice(-4), sentAt: Timestamp.now() });
-            input.value = '';
-        };
-
-        window.handleMapReport = (e) => {
-            e.preventDefault();
-            const center = map.getCenter();
-            const marker = L.marker([center.lat + (Math.random()-0.5)*0.01, center.lng + (Math.random()-0.5)*0.01], {
-                icon: L.divIcon({ className: 'warning-marker', html: '<div class="warning-icon-inner"><i class="fas fa-exclamation-triangle"></i></div>' })
-            }).addTo(map);
-            window.showToast("Warning pinned.");
-            e.target.reset();
-        };
-
-        window.toggleGpsTracking = () => {
-            gpsTrackingMode = !gpsTrackingMode;
-            document.getElementById('gps-toggle').classList.toggle('gps-btn-active');
-            document.getElementById('gps-indicator').classList.toggle('hidden');
+        window.switchView = (view) => {
+            document.getElementById('citizen-view').classList.add('hidden');
+            document.getElementById('emergency-map-view').classList.add('hidden');
+            document.getElementById('le-view').classList.add('hidden');
+            if (view === 'citizen') document.getElementById('citizen-view').classList.remove('hidden');
+            if (view === 'le') document.getElementById('le-view').classList.remove('hidden');
+            if (view === 'emergency-map') {
+                document.getElementById('emergency-map-view').classList.remove('hidden');
+                if (!sosMap) {
+                    sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 11);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
+                }
+                setTimeout(() => sosMap.invalidateSize(), 100);
+            }
         };
 
         window.renderSosSignals = (signals) => {
@@ -748,22 +699,6 @@
             }
         };
 
-        window.switchView = (view) => {
-            document.getElementById('citizen-view').classList.add('hidden');
-            document.getElementById('emergency-map-view').classList.add('hidden');
-            document.getElementById('le-view').classList.add('hidden');
-            if (view === 'citizen') document.getElementById('citizen-view').classList.remove('hidden');
-            if (view === 'le') document.getElementById('le-view').classList.remove('hidden');
-            if (view === 'emergency-map') {
-                document.getElementById('emergency-map-view').classList.remove('hidden');
-                if (!sosMap) {
-                    sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 11);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
-                }
-                setTimeout(() => sosMap.invalidateSize(), 100);
-            }
-        };
-
         window.toggleChat = () => document.getElementById('chat-panel').classList.toggle('hidden');
         window.openReportModal = () => document.getElementById('reportModal').classList.remove('hidden');
         window.closeReportModal = () => {
@@ -777,9 +712,10 @@
             const t = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 4000);
+            setTimeout(() => t.classList.add('hidden'), 5000);
         };
 
+        // Final Boot
         initAuth();
     </script>
 </body>
