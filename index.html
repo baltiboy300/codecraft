@@ -25,32 +25,6 @@
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
         }
 
-        .alert-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .alert-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .nav-link {
-            position: relative;
-            transition: color 0.3s ease;
-        }
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: #1e293b;
-            transition: width 0.3s ease;
-        }
-        .nav-link:hover::after {
-            width: 100%;
-        }
-
         .btn-primary {
             background-color: #1e293b;
             color: white;
@@ -65,7 +39,6 @@
             scroll-margin-top: 100px;
         }
 
-        /* Map Styling */
         .map-frame-container {
             width: 100%;
             height: 550px;
@@ -82,45 +55,6 @@
             height: 100%;
         }
 
-        /* Custom Warning Icon */
-        .warning-marker {
-            background: none;
-            border: none;
-        }
-        .warning-icon-inner {
-            color: #ef4444;
-            font-size: 24px;
-            text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-            animation: bounce 2s infinite;
-        }
-
-        /* GPS Marker Icon */
-        .user-gps-marker {
-            background: none;
-            border: none;
-        }
-        .gps-icon-inner {
-            width: 20px;
-            height: 20px;
-            background: #3b82f6;
-            border: 3px solid white;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
-            position: relative;
-        }
-        .gps-icon-inner::after {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            border-radius: 50%;
-            border: 2px solid #3b82f6;
-            animation: gps-pulse 2s infinite;
-        }
-
-        /* SOS Marker Icon */
         .sos-gps-marker {
             background: none;
             border: none;
@@ -156,12 +90,6 @@
             100% { transform: scale(2.5); opacity: 0; }
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
-        /* Emergency Mode Visuals */
         .emergency-btn-active {
             background-color: #ef4444 !important;
             color: white !important;
@@ -175,11 +103,6 @@
             box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
         }
 
-        /* Chat Widget Styling */
-        #chat-widget {
-            z-index: 100;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
         .chat-panel {
             height: 500px;
             width: 350px;
@@ -191,21 +114,13 @@
             max-width: 80%;
             word-wrap: break-word;
         }
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
 
-        .photo-preview {
-            width: 100%;
-            height: 150px;
-            border: 2px dashed #e2e8f0;
+        .evidence-preview {
+            max-height: 200px;
+            object-fit: cover;
             border-radius: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8fafc;
-            cursor: pointer;
-            overflow: hidden;
+            margin-top: 1rem;
+            width: 100%;
         }
     </style>
 </head>
@@ -271,15 +186,32 @@
                         <i class="fas fa-broadcast-tower"></i>
                         <span>EMERGENCY TRIGGER ACTIVE</span>
                     </div>
-                    <div id="threat-support-card" class="bg-white p-6 rounded-3xl shadow-2xl border-2 border-red-100 max-w-sm mx-auto hidden">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl shadow-lg">
-                                <i class="fas fa-user-check"></i>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                        <div id="threat-support-card" class="bg-white p-6 rounded-3xl shadow-2xl border-2 border-red-100 hidden">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl shadow-lg">
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                                <div class="text-left">
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Support Assigned</p>
+                                    <h4 id="assigned-vol-name" class="text-lg font-black text-slate-900 leading-tight">Volunteer Name</h4>
+                                    <a id="assigned-vol-phone" href="tel:" class="text-blue-600 font-bold text-sm hover:underline tracking-tight">+91 00000 00000</a>
+                                </div>
                             </div>
-                            <div class="text-left">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Support Assigned</p>
-                                <h4 id="assigned-vol-name" class="text-lg font-black text-slate-900 leading-tight">Volunteer Name</h4>
-                                <a id="assigned-vol-phone" href="tel:" class="text-blue-600 font-bold text-sm hover:underline tracking-tight">+91 00000 00000</a>
+                        </div>
+
+                        <div id="live-proof-card" class="bg-white p-6 rounded-3xl shadow-2xl border-2 border-blue-100 text-left">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Live Evidence (Max 1MB)</p>
+                            <input type="file" id="evidence-input" accept="image/*,video/*" class="hidden" onchange="window.handleEvidenceUpload(this)">
+                            <button onclick="document.getElementById('evidence-input').click()" class="w-full flex items-center justify-center space-x-2 py-3 bg-slate-100 border-2 border-dashed border-slate-300 rounded-2xl text-slate-500 hover:bg-slate-200 transition-all">
+                                <i class="fas fa-camera"></i>
+                                <span class="text-xs font-bold">Attach Photo/Video</span>
+                            </button>
+                            <div id="evidence-preview-container" class="hidden">
+                                <img id="evidence-img-preview" class="evidence-preview hidden">
+                                <video id="evidence-vid-preview" class="evidence-preview hidden" controls></video>
+                                <p class="text-[10px] text-center text-green-600 font-bold mt-2">Proof Uploaded to Command Center</p>
                             </div>
                         </div>
                     </div>
@@ -341,10 +273,6 @@
                     <h1 class="text-4xl font-black text-slate-900">SOS Command Center</h1>
                     <p class="text-slate-500 font-medium">Tracking all active SOS triggers.</p>
                 </div>
-                <div class="bg-red-600 text-white px-6 py-3 rounded-2xl shadow-lg flex items-center space-x-3 animate-pulse">
-                    <i class="fas fa-satellite-dish"></i>
-                    <span class="text-xs font-black uppercase tracking-widest">Live Emergency Tracking</span>
-                </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -372,10 +300,6 @@
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                         <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Active SOS</p>
                         <p id="le-sos-count" class="text-4xl font-black text-red-600">0</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Volunteers</p>
-                        <p id="le-vol-count" class="text-4xl font-black text-blue-600">0</p>
                     </div>
                 </div>
                 <div class="lg:col-span-3">
@@ -441,43 +365,18 @@
     </div>
 
     <script type="module">
-        /*
-        ========================================================================
-        FIREBASE SETUP GUIDE (READ THIS TO FIX ERRORS)
-        ========================================================================
-        1. ENABLE ANONYMOUS AUTH:
-           Go to Firebase Console > Build > Authentication > Sign-in method.
-           Enable "Anonymous". Without this, data cannot be saved.
-
-        2. SET FIRESTORE SECURITY RULES:
-           Go to Firebase Console > Build > Firestore Database > Rules.
-           Paste these rules (Important: The path must match your appId):
-           
-           rules_version = '2';
-           service cloud.firestore {
-             match /databases/{database}/documents {
-               match /artifacts/{appId}/public/data/{collectionName}/{docId} {
-                 allow read, write: if request.auth != null;
-               }
-             }
-           }
-        ========================================================================
-        */
-
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- PRODUCTION CONFIGURATION ---
+        // Firebase Config
         const fallbackConfig = {
-            apiKey: "AIzaSyAWh2RWD7DRJenPhg-_F3SrbTt9ZvfMb58",
-            authDomain: "codecraft-ba355.firebaseapp.com",
-            projectId: "codecraft-ba355",
-            storageBucket: "codecraft-ba355.firebasestorage.app",
-            messagingSenderId: "462067380594",
-            appId: "1:462067380594:web:0f94e2c2b9d60bbc236deb",
-            measurementId: "G-RGJ5TDG7KM"
+            apiKey: "", 
+            authDomain: "saavadhan-app.firebaseapp.com",
+            projectId: "saavadhan-app",
+            storageBucket: "saavadhan-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
@@ -485,90 +384,80 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // MeasurementId is optional but analytics requires it if present
-        let analytics;
-        try {
-            analytics = getAnalytics(app);
-        } catch (e) {
-            console.warn("Analytics failed to initialize.");
-        }
-        
-        // App ID determines the Firestore path
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-production-v1';
+        // This App ID must match your Firestore Rules exactly
+        const appId = 'saavadhan-production-v1';
 
         let user = null;
         let map, sosMap;
         let emergencyMode = false;
-        let gpsTrackingMode = false;
-        let watchId = null;
-        let userMarker = null;
         let volunteersList = [];
         let sosMarkers = {};
 
-        // Helper for Firestore Paths (Rule 1)
         const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
 
-        // Auth initialization (Rule 3)
-        const initAuth = async () => {
+        // Core Initialization Sequence (Rule 3 Fix)
+        const init = async () => {
             try {
+                // Wait for Auth to complete BEFORE setting up Firestore listeners
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    // Falls back to Anonymous. ENSURE THIS IS ENABLED IN FIREBASE CONSOLE!
                     await signInAnonymously(auth);
                 }
+                
+                // Set up the listener for state changes
+                onAuthStateChanged(auth, (u) => {
+                    user = u;
+                    if (u) {
+                        console.log("Auth Success:", u.uid);
+                        setupListeners(); // Safe to start listeners now
+                        setupMaps();
+                    }
+                });
             } catch (err) {
-                console.error("Firebase Auth Error:", err);
-                window.showToast("Auth Error. Enable 'Anonymous' in Firebase Console.");
+                console.error("Firebase Initialization Error:", err);
+                window.showToast("Connection Error. Ensure Anonymous Auth is enabled.");
             }
         };
-
-        onAuthStateChanged(auth, (u) => {
-            user = u;
-            if (u) {
-                console.log("Logged in as:", u.uid);
-                setupListeners();
-                setupMaps();
-            }
-        });
 
         const setupListeners = () => {
             if (!user) return;
 
-            // Sync Volunteers
-            onSnapshot(getColl('volunteers'), (snap) => {
-                volunteersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderLePortal();
-            }, (err) => {
-                console.error("Volunteers sync failed:", err);
-                if (err.code === 'permission-denied') window.showToast("Sync Error: Fix Firestore Rules.");
-            });
+            // Success and Error callbacks are mandatory to catch Permission Denied
+            onSnapshot(getColl('volunteers'), 
+                (snap) => {
+                    volunteersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    renderLePortal();
+                },
+                (err) => console.error("Volunteers Sync Error:", err)
+            );
 
-            // Sync SOS Signals
-            onSnapshot(getColl('sos_signals'), (snap) => {
-                const signals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderSosSignals(signals);
-                renderLePortal(signals);
-            }, (err) => console.error("SOS sync error:", err));
+            onSnapshot(getColl('sos_signals'), 
+                (snap) => {
+                    const signals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    window.lastSignals = signals;
+                    renderSosSignals(signals);
+                    renderLePortal(signals);
+                },
+                (err) => console.error("SOS Sync Error:", err)
+            );
 
-            // Sync Chat
-            onSnapshot(getColl('messages'), (snap) => {
-                const msgs = snap.docs.map(d => d.data()).sort((a,b) => a.sentAt - b.sentAt);
-                const container = document.getElementById('message-container');
-                container.innerHTML = msgs.map(m => `
-                    <div class="flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}">
-                        <p class="text-[9px] font-black text-slate-400 mb-1 uppercase">${m.name}</p>
-                        <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${m.uid === user.uid ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}">
-                            ${m.text}
+            onSnapshot(getColl('messages'), 
+                (snap) => {
+                    const msgs = snap.docs.map(d => d.data()).sort((a,b) => a.sentAt - b.sentAt);
+                    const container = document.getElementById('message-container');
+                    container.innerHTML = msgs.map(m => `
+                        <div class="flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}">
+                            <p class="text-[9px] font-black text-slate-400 mb-1 uppercase">${m.name}</p>
+                            <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${m.uid === user.uid ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}">
+                                ${m.text}
+                            </div>
                         </div>
-                    </div>
-                `).join('');
-                container.scrollTop = container.scrollHeight;
-            }, (err) => {
-                console.error("Chat sync error:", err);
-                const container = document.getElementById('message-container');
-                container.innerHTML = `<div class="p-4 text-center text-red-500 text-xs font-bold">Chat Disabled: Update Firestore Rules</div>`;
-            });
+                    `).join('');
+                    container.scrollTop = container.scrollHeight;
+                },
+                (err) => console.error("Chat Sync Error:", err)
+            );
         };
 
         const setupMaps = () => {
@@ -578,40 +467,45 @@
             }
         };
 
-        window.handleRegistration = async (e) => {
-            e.preventDefault();
-            if (!user) return;
-            const name = document.getElementById('vol-name').value;
-            const phone = document.getElementById('vol-phone').value;
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid), {
-                    name, phone, uid: user.uid, joinedAt: Timestamp.now()
-                });
-                window.closeVolunteerModal();
-                document.getElementById('on-call-status').classList.remove('hidden');
-                window.showToast("Registered as On-Call Volunteer.");
-            } catch (err) {
-                console.error("Volunteer Registration Error:", err);
-                window.showToast("Registration Failed: Update Firestore Rules.");
-            }
-        };
+        window.handleEvidenceUpload = async (input) => {
+            if (!user || !emergencyMode) return;
+            const file = input.files[0];
+            if (!file) return;
 
-        window.handleLeaveOnCall = async () => {
-            if (!user) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid));
-                document.getElementById('on-call-status').classList.add('hidden');
-                window.showToast("Left On-Call pool.");
-            } catch (err) {
-                window.showToast("Error updating status.");
+            if (file.size > 800 * 1024) {
+                window.showToast("File too large for Firestore (Max 1MB).");
+                input.value = "";
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Data = e.target.result;
+                const type = file.type.startsWith('image') ? 'image' : 'video';
+                
+                document.getElementById('evidence-preview-container').classList.remove('hidden');
+                const img = document.getElementById('evidence-img-preview');
+                const vid = document.getElementById('evidence-vid-preview');
+                
+                if (type === 'image') {
+                    img.src = base64Data; img.classList.remove('hidden'); vid.classList.add('hidden');
+                } else {
+                    vid.src = base64Data; vid.classList.remove('hidden'); img.classList.add('hidden');
+                }
+
+                try {
+                    const sosRef = doc(db, 'artifacts', appId, 'public', 'data', 'sos_signals', user.uid);
+                    await updateDoc(sosRef, { evidence: base64Data, evidenceType: type });
+                    window.showToast("Evidence transmitted.");
+                } catch (err) {
+                    window.showToast("Permission Error: Check Firestore Rules.");
+                }
+            };
+            reader.readAsDataURL(file);
         };
 
         window.toggleEmergencyMode = async () => {
-            if (!user) {
-                window.showToast("Waiting for secure connection...");
-                return;
-            }
+            if (!user) return;
             emergencyMode = !emergencyMode;
             const btn = document.getElementById('emergency-toggle');
             const indicator = document.getElementById('emergency-indicator');
@@ -621,179 +515,119 @@
             if (emergencyMode) {
                 btn.classList.add('emergency-btn-active');
                 indicator.classList.remove('hidden');
-                
-                let volunteer = null;
-                if (volunteersList.length > 0) {
-                    volunteer = volunteersList[Math.floor(Math.random() * volunteersList.length)];
-                    document.getElementById('assigned-vol-name').innerText = volunteer.name;
-                    document.getElementById('assigned-vol-phone').innerText = volunteer.phone;
-                    document.getElementById('assigned-vol-phone').href = `tel:${volunteer.phone}`;
+                let vol = volunteersList.length > 0 ? volunteersList[Math.floor(Math.random() * volunteersList.length)] : null;
+                if (vol) {
+                    document.getElementById('assigned-vol-name').innerText = vol.name;
+                    document.getElementById('assigned-vol-phone').innerText = vol.phone;
                     card.classList.remove('hidden');
                 }
-
-                try {
-                    await setDoc(sosRef, {
-                        uid: user.uid,
-                        lat: 28.6139 + (Math.random() - 0.5) * 0.1,
-                        lng: 77.2090 + (Math.random() - 0.5) * 0.1,
-                        volunteer: volunteer || null,
-                        timestamp: Timestamp.now()
-                    });
-                    window.showToast("SOS Broadcast Active.");
-                } catch (err) {
-                    console.error("SOS Write Error:", err);
-                    window.showToast("SOS Failed: Fix Firestore Rules.");
-                    emergencyMode = false;
-                    btn.classList.remove('emergency-btn-active');
-                    indicator.classList.add('hidden');
-                }
+                await setDoc(sosRef, { uid: user.uid, lat: 28.6139 + (Math.random()-0.5)*0.1, lng: 77.2090 + (Math.random()-0.5)*0.1, volunteer: vol, timestamp: Timestamp.now() });
+                window.showToast("SOS Broadcast Active.");
             } else {
                 btn.classList.remove('emergency-btn-active');
                 indicator.classList.add('hidden');
                 card.classList.add('hidden');
-                try {
-                    await deleteDoc(sosRef);
-                    window.showToast("SOS Signal Terminated.");
-                } catch (e) {}
+                document.getElementById('evidence-preview-container').classList.add('hidden');
+                await deleteDoc(sosRef);
+                window.showToast("SOS Terminated.");
             }
         };
 
-        window.sendMessage = async () => {
-            if (!user) {
-                window.showToast("Not connected to server.");
-                return;
-            }
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
-            try {
-                await addDoc(getColl('messages'), {
-                    text,
-                    uid: user.uid,
-                    name: user.uid.slice(-4),
-                    sentAt: Timestamp.now()
-                });
-                input.value = '';
-            } catch (err) {
-                console.error("Chat send error:", err);
-                window.showToast("Message failed: Fix Firestore Rules.");
-            }
-        };
-
-        window.handleMapReport = (e) => {
-            e.preventDefault();
-            const detail = document.getElementById('map-warning-detail').value;
-            const center = map.getCenter();
-            const marker = L.marker([center.lat + (Math.random()-0.5)*0.02, center.lng + (Math.random()-0.5)*0.02], {
-                icon: L.divIcon({ className: 'warning-marker', html: '<div class="warning-icon-inner"><i class="fas fa-exclamation-triangle"></i></div>' })
-            }).addTo(map);
-            marker.bindTooltip(detail).openTooltip();
-            window.showToast("Warning pinned to map.");
-            e.target.reset();
-        };
-
-        window.toggleGpsTracking = () => {
-            gpsTrackingMode = !gpsTrackingMode;
-            const btn = document.getElementById('gps-toggle');
-            const indicator = document.getElementById('gps-indicator');
-            if (gpsTrackingMode) {
-                btn.classList.add('gps-btn-active');
-                indicator.classList.remove('hidden');
-                window.showToast("GPS Tracking Active.");
-            } else {
-                btn.classList.remove('gps-btn-active');
-                indicator.classList.add('hidden');
-                window.showToast("Tracking Stopped.");
-            }
-        };
-
-        const renderSosSignals = (signals) => {
+        window.renderSosSignals = (signals) => {
             if (!sosMap) return;
             Object.values(sosMarkers).forEach(m => sosMap.removeLayer(m));
             sosMarkers = {};
-            
             const list = document.getElementById('sos-list-sidebar');
-            list.innerHTML = signals.length ? '' : '<div class="text-xs text-slate-400 italic">No active signals.</div>';
-
+            list.innerHTML = '';
             signals.forEach(s => {
                 const marker = L.marker([s.lat, s.lng], {
                     icon: L.divIcon({ className: 'sos-gps-marker', html: '<div class="sos-icon-inner"><i class="fas fa-exclamation"></i></div>' })
                 }).addTo(sosMap);
                 sosMarkers[s.id] = marker;
-
                 const div = document.createElement('div');
                 div.className = "p-4 bg-white border rounded-xl cursor-pointer hover:border-red-500 transition-all";
-                div.innerHTML = `<p class="text-xs font-black text-red-600">ID: ...${s.uid.slice(-6)}</p><p class="text-[10px] text-slate-500">Live Frequency</p>`;
+                div.innerHTML = `<p class="text-xs font-black text-red-600">ID: ...${s.uid.slice(-6)} ${s.evidence ? '📎' : ''}</p>`;
                 div.onclick = () => sosMap.flyTo([s.lat, s.lng], 15);
                 list.appendChild(div);
             });
         };
 
-        const renderLePortal = (signals = []) => {
-            const sosCount = document.getElementById('le-sos-count');
-            const volCount = document.getElementById('le-vol-count');
-            if (sosCount) sosCount.innerText = signals.length;
-            if (volCount) volCount.innerText = volunteersList.length;
-
+        window.renderLePortal = (signals = []) => {
+            const sc = document.getElementById('le-sos-count');
+            if (sc) sc.innerText = signals.length;
             const list = document.getElementById('le-sos-list');
             if (list) {
                 if (signals.length === 0) {
-                    list.innerHTML = '<div class="p-8 text-center text-slate-400 italic">No active SOS signals.</div>';
+                    list.innerHTML = '<div class="p-8 text-center text-slate-400 italic">No active signals.</div>';
                 } else {
                     list.innerHTML = signals.map(s => `
-                        <div class="p-6 flex justify-between items-center hover:bg-slate-50">
-                            <div>
-                                <h4 class="font-bold text-slate-900">SOS Trigger: ...${s.uid.slice(-6)}</h4>
-                                <p class="text-xs text-slate-500">Volunteer: ${s.volunteer ? s.volunteer.name : 'Awaiting...'}</p>
+                        <div class="p-6 flex justify-between items-center border-b last:border-0">
+                            <div><h4 class="font-bold">SOS: ...${s.uid.slice(-6)}</h4><p class="text-xs text-slate-500">Vol: ${s.volunteer ? s.volunteer.name : 'None'}</p></div>
+                            <div class="flex items-center space-x-2">
+                                ${s.evidence ? `<button onclick="window.viewLeEvidence('${s.uid}')" class="text-blue-600 text-[10px] font-black uppercase">View Proof</button>` : ''}
+                                <button onclick="window.switchView('emergency-map')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">MONITOR</button>
                             </div>
-                            <button onclick="window.switchView('emergency-map')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">MONITOR</button>
-                        </div>
-                    `).join('');
+                        </div>`).join('');
                 }
             }
         };
 
-        // Window Globals
+        window.viewLeEvidence = (uid) => {
+            const s = (window.lastSignals || []).find(sig => sig.uid === uid);
+            if (!s || !s.evidence) return;
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center p-8";
+            overlay.innerHTML = `<div class="relative w-full max-w-4xl flex flex-col items-center">
+                <button onclick="this.parentElement.parentElement.remove()" class="absolute -top-12 right-0 text-white text-3xl">&times;</button>
+                ${s.evidenceType === 'image' ? `<img src="${s.evidence}" class="max-w-full max-h-[80vh] rounded-xl">` : `<video src="${s.evidence}" controls autoplay class="max-w-full max-h-[80vh] rounded-xl"></video>`}
+            </div>`;
+            document.body.appendChild(overlay);
+        };
+
         window.switchView = (view) => {
             document.getElementById('citizen-view').classList.add('hidden');
             document.getElementById('emergency-map-view').classList.add('hidden');
             document.getElementById('le-view').classList.add('hidden');
-            
             if (view === 'citizen') document.getElementById('citizen-view').classList.remove('hidden');
-            if (view === 'le') {
-                document.getElementById('le-view').classList.remove('hidden');
-                renderLePortal();
-            }
+            if (view === 'le') document.getElementById('le-view').classList.remove('hidden');
             if (view === 'emergency-map') {
                 document.getElementById('emergency-map-view').classList.remove('hidden');
                 if (!sosMap) {
                     sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 11);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
                 }
-                setTimeout(() => sosMap.invalidateSize(), 100);
+                setTimeout(() => sosMap.invalidateSize(), 200);
             }
             window.scrollTo(0,0);
         };
 
         window.toggleChat = () => document.getElementById('chat-panel').classList.toggle('hidden');
-        window.openReportModal = () => document.getElementById('reportModal').classList.remove('hidden');
-        window.closeReportModal = () => document.getElementById('reportModal').classList.add('hidden');
-        window.openVolunteerModal = () => document.getElementById('volunteerModal').classList.remove('hidden');
-        window.closeVolunteerModal = () => document.getElementById('volunteerModal').classList.add('hidden');
-        window.scrollToId = (id) => document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
         window.showToast = (msg) => {
             const t = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 5000);
+            setTimeout(() => t.classList.add('hidden'), 3000);
         };
-        window.handleReportSubmit = (e) => {
+        window.scrollToId = (id) => document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        window.openReportModal = () => document.getElementById('reportModal').classList.remove('hidden');
+        window.closeReportModal = () => document.getElementById('reportModal').classList.add('hidden');
+        window.openVolunteerModal = () => document.getElementById('volunteerModal').classList.remove('hidden');
+        window.closeVolunteerModal = () => document.getElementById('volunteerModal').classList.add('hidden');
+        window.handleReportSubmit = (e) => { e.preventDefault(); window.showToast("Report Sent."); window.closeReportModal(); };
+        window.handleRegistration = async (e) => {
             e.preventDefault();
-            window.showToast("Incident logged and encrypted.");
-            window.closeReportModal();
+            const name = document.getElementById('vol-name').value;
+            const phone = document.getElementById('vol-phone').value;
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid), { name, phone, uid: user.uid, joinedAt: Timestamp.now() });
+                document.getElementById('volunteerModal').classList.add('hidden');
+                document.getElementById('on-call-status').classList.remove('hidden');
+                window.showToast("Registered.");
+            } catch (err) { window.showToast("Registration Failed."); }
         };
 
-        initAuth();
+        // Start App
+        init();
     </script>
 </body>
 </html>
