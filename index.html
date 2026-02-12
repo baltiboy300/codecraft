@@ -41,7 +41,7 @@
         #verification-gate.verified {
             opacity: 0;
             pointer-events: none;
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
 
         .map-frame-container {
@@ -58,6 +58,7 @@
         #leaflet-map, #sos-leaflet-map {
             width: 100%;
             height: 100%;
+            background: #cbd5e1; /* Visual placeholder while loading */
         }
 
         .emergency-btn-active {
@@ -241,8 +242,8 @@
         <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative">
             <h3 class="text-2xl font-black mb-6">Be On Call</h3>
             <form onsubmit="window.handleRegistration(event)" class="space-y-6">
-                <input id="vol-name" type="text" placeholder="Full Name" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none">
-                <input id="vol-phone" type="tel" placeholder="Phone" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none">
+                <input id="vol-name" type="text" placeholder="Full Name" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none">
+                <input id="vol-phone" type="tel" placeholder="Phone" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none">
                 <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black">ACTIVATE PROFILE</button>
                 <button type="button" onclick="window.closeVolunteerModal()" class="w-full text-slate-400 font-bold text-sm">Cancel</button>
             </form>
@@ -264,6 +265,10 @@
             
             sessionStorage.setItem('saavadhan_verified', 'true');
             
+            // Critical: Force maps to recalculate their size now that the overlay is gone
+            if(window.mapInstance) window.mapInstance.invalidateSize();
+            if(window.sosMapInstance) window.sosMapInstance.invalidateSize();
+            
             if(window.showToast) {
                 window.showToast("Verification Successful! Hub Unlocked.");
             }
@@ -272,6 +277,10 @@
         window.onload = function() {
             if(sessionStorage.getItem('saavadhan_verified') === 'true') {
                 document.getElementById('verification-gate').classList.add('verified');
+                // Allow a small delay for DOM to settle before invalidating map size
+                setTimeout(() => {
+                    if(window.mapInstance) window.mapInstance.invalidateSize();
+                }, 500);
             }
         }
     </script>
@@ -281,12 +290,18 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Setup
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-v1';
+        // Secure Firebase Setup
+        let app, auth, db, appId;
+        try {
+            const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{"apiKey":"","projectId":"saavadhan-default"}';
+            const firebaseConfig = typeof configStr === 'string' ? JSON.parse(configStr) : configStr;
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-v1';
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+        }
 
         let user = null;
         let map, sosMap;
@@ -297,6 +312,7 @@
 
         // Auth
         const initAuth = async () => {
+            if (!auth) return;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -315,7 +331,7 @@
         });
 
         const setupListeners = () => {
-            if (!user) return;
+            if (!user || !db) return;
 
             // SOS Listener
             onSnapshot(getColl('sos_signals'), (snap) => {
@@ -343,12 +359,15 @@
         const setupMaps = () => {
             if (!map) {
                 map = L.map('leaflet-map').setView([28.6139, 77.2090], 12);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+                window.mapInstance = map; // Export to window for verification callback
             }
         };
 
         window.toggleEmergencyMode = async () => {
-            if (!user) return;
+            if (!user || !db) return;
             emergencyMode = !emergencyMode;
             const btn = document.getElementById('emergency-toggle');
             const indicator = document.getElementById('emergency-indicator');
@@ -382,7 +401,7 @@
         };
 
         window.sendMessage = async () => {
-            if (!user) return;
+            if (!user || !db) return;
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text) return;
@@ -401,6 +420,7 @@
 
         window.handleRegistration = async (e) => {
             e.preventDefault();
+            if (!user || !db) return;
             const name = document.getElementById('vol-name').value;
             const phone = document.getElementById('vol-phone').value;
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid), {
@@ -431,15 +451,28 @@
             document.getElementById('citizen-view').classList.add('hidden');
             document.getElementById('le-view').classList.add('hidden');
             document.getElementById('emergency-map-view').classList.add('hidden');
-            document.getElementById(view + '-view').classList.remove('hidden');
-            if(map) map.invalidateSize();
-            if(sosMap) sosMap.invalidateSize();
+            
+            const target = document.getElementById(view + '-view');
+            if (target) target.classList.remove('hidden');
+
+            if (view === 'emergency-map' && !sosMap) {
+                sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
+                window.sosMapInstance = sosMap;
+            }
+            
+            // Invalidate size on view switch to prevent grey boxes
+            setTimeout(() => {
+                if(map) map.invalidateSize();
+                if(sosMap) sosMap.invalidateSize();
+            }, 100);
         };
 
         window.toggleChat = () => document.getElementById('chat-panel').classList.toggle('hidden');
 
         window.showToast = (msg) => {
             const t = document.getElementById('toast');
+            if (!t) return;
             document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('hidden');
             setTimeout(() => t.classList.add('hidden'), 4000);
