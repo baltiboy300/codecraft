@@ -6,17 +6,15 @@
     <title>SAAVADHAN | Community Safety & Crime Prevention</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Leaflet Map Library -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
             color: #1e293b;
-            transition: background-color 0.5s ease;
         }
 
         .glass-nav {
@@ -25,39 +23,6 @@
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
         }
 
-        .nav-link {
-            position: relative;
-            transition: color 0.3s ease;
-        }
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: #1e293b;
-            transition: width 0.3s ease;
-        }
-        .nav-link:hover::after {
-            width: 100%;
-        }
-
-        .btn-primary {
-            background-color: #1e293b;
-            color: white;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            background-color: #334155;
-            transform: scale(1.02);
-        }
-
-        section {
-            scroll-margin-top: 100px;
-        }
-
-        /* Map Styling */
         .map-frame-container {
             width: 100%;
             height: 550px;
@@ -74,23 +39,19 @@
             height: 100%;
         }
 
-        /* Custom Warning Icon */
-        .warning-marker {
-            background: none;
-            border: none;
-        }
-        .warning-icon-inner {
+        .warning-marker-icon {
             color: #ef4444;
             font-size: 24px;
             text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-            animation: bounce 2s infinite;
+            animation: pulse-red 2s infinite;
         }
 
-        /* SOS Marker Icon */
-        .sos-gps-marker {
-            background: none;
-            border: none;
+        @keyframes pulse-red {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
         }
+
         .sos-icon-inner {
             width: 24px;
             height: 24px;
@@ -98,13 +59,13 @@
             border: 3px solid white;
             border-radius: 50%;
             box-shadow: 0 0 20px rgba(220, 38, 38, 0.9);
-            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 10px;
         }
+
         .sos-icon-inner::after {
             content: '';
             position: absolute;
@@ -122,76 +83,9 @@
             100% { transform: scale(2.5); opacity: 0; }
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
         .emergency-btn-active {
             background-color: #ef4444 !important;
             color: white !important;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-        }
-
-        .gps-btn-active {
-            background-color: #3b82f6 !important;
-            color: white !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
-        }
-
-        #chat-widget {
-            z-index: 100;
-        }
-        .chat-panel {
-            height: 500px;
-            width: 350px;
-            max-width: 90vw;
-            display: flex;
-            flex-direction: column;
-        }
-        .message-bubble {
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-
-        .photo-preview {
-            width: 100%;
-            height: 180px;
-            border: 2px dashed #e2e8f0;
-            border-radius: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8fafc;
-            cursor: pointer;
-            overflow: hidden;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        .photo-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .remove-photo-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(15, 23, 42, 0.8);
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            backdrop-filter: blur(4px);
-            z-index: 10;
         }
     </style>
 </head>
@@ -206,43 +100,32 @@
                         <i class="fas fa-fingerprint text-xl"></i>
                     </div>
                     <div class="hidden sm:block">
-                        <span class="text-2xl font-bold tracking-tighter text-slate-900">SAAVADHAN</span>
-                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold -mt-1">India Safety Hub</p>
+                        <span class="text-2xl font-black tracking-tighter text-slate-900 uppercase">SAAVADHAN</span>
                     </div>
                 </div>
                 
                 <div class="flex items-center space-x-2 md:space-x-4">
-                    <div id="citizen-nav-links" class="hidden md:flex items-center space-x-6 text-sm font-semibold mr-4">
-                        <a href="javascript:void(0)" onclick="window.switchView('citizen')" class="nav-link text-slate-600 hover:text-slate-900">Safety Hub</a>
-                        <a href="javascript:void(0)" onclick="window.switchView('emergency-map')" class="nav-link text-red-600 hover:text-red-700">Emergency Map</a>
+                    <div class="hidden md:flex items-center space-x-6 text-sm font-semibold mr-4">
+                        <button onclick="window.switchView('citizen')" class="text-slate-600 hover:text-slate-900">Safety Hub</button>
+                        <button onclick="window.switchView('emergency-map')" class="text-red-600 hover:text-red-700">Live Map</button>
                     </div>
 
-                    <button onclick="window.switchView('le')" class="flex items-center space-x-2 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-[10px] md:text-xs transition-all hover:bg-slate-900 hover:text-white">
+                    <button onclick="window.switchView('le')" class="flex items-center space-x-2 px-3 py-2 rounded-xl bg-slate-900 text-white font-bold text-[10px] md:text-xs">
                         <i class="fas fa-user-shield"></i>
-                        <span class="hidden sm:inline">LE PORTAL</span>
+                        <span>LE PORTAL</span>
                     </button>
 
-                    <div class="flex items-center space-x-2 md:space-x-4">
-                        <div id="on-call-status" class="hidden flex items-center bg-green-50 border border-green-200 px-3 py-1.5 rounded-full shadow-sm mr-2">
-                            <span class="relative flex h-2 w-2 mr-2">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                            </span>
-                            <span class="text-[9px] font-black text-green-700 uppercase mr-3 tracking-tighter">On Call</span>
-                            <button onclick="window.handleLeaveOnCall()" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white rounded-md p-1 transition-colors leading-none">
-                                <i class="fas fa-times text-[8px]"></i>
-                            </button>
-                        </div>
-
-                        <button id="gps-toggle" onclick="window.toggleGpsTracking()" class="flex items-center space-x-2 px-3 md:px-4 py-2 rounded-xl border-2 border-blue-100 text-blue-600 font-bold text-[10px] md:text-xs transition-all hover:bg-blue-50">
-                            <i class="fas fa-location-crosshairs"></i>
-                            <span class="hidden sm:inline">GPS</span>
-                        </button>
-                        <button id="emergency-toggle" onclick="window.toggleEmergencyMode()" class="flex items-center space-x-2 px-3 md:px-4 py-2 rounded-xl border-2 border-red-100 text-red-600 font-bold text-[10px] md:text-xs transition-all hover:bg-red-50">
-                            <i class="fas fa-shield-alt"></i>
-                            <span class="hidden sm:inline">SOS</span>
-                        </button>
+                    <div id="on-call-status" class="hidden flex items-center bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
+                        <span class="relative flex h-2 w-2 mr-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span class="text-[9px] font-black text-green-700 uppercase tracking-tighter">On Call</span>
                     </div>
+
+                    <button id="emergency-toggle" onclick="window.toggleEmergencyMode()" class="px-3 md:px-4 py-2 rounded-xl border-2 border-red-100 text-red-600 font-black text-[10px] md:text-xs hover:bg-red-50 transition-all">
+                        SOS
+                    </button>
                 </div>
             </div>
         </div>
@@ -252,53 +135,30 @@
     <div id="citizen-view" class="block">
         <header class="pt-40 pb-20 px-4 bg-gradient-to-b from-white to-slate-50">
             <div class="max-w-7xl mx-auto text-center">
-                <div id="emergency-indicator" class="hidden inline-flex flex-col items-center mb-8">
-                    <div class="inline-flex items-center space-x-2 bg-red-600 text-white px-6 py-2 rounded-full text-xs font-black animate-pulse shadow-xl mb-4">
-                        <i class="fas fa-broadcast-tower"></i>
-                        <span>EMERGENCY TRIGGER ACTIVE</span>
-                    </div>
-                    <div id="threat-support-card" class="bg-white p-6 rounded-3xl shadow-2xl border-2 border-red-100 max-w-sm mx-auto hidden">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl shadow-lg">
-                                <i class="fas fa-user-check"></i>
-                            </div>
-                            <div class="text-left">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Support Assigned</p>
-                                <h4 id="assigned-vol-name" class="text-lg font-black text-slate-900 leading-tight">Volunteer Name</h4>
-                                <a id="assigned-vol-phone" href="tel:" class="text-blue-600 font-bold text-sm hover:underline tracking-tight">+91 00000 00000</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="gps-indicator" class="hidden inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-black mb-8 shadow-xl">
-                    <i class="fas fa-satellite"></i>
-                    <span>LIVE GPS TRACKING ACTIVE</span>
-                </div>
-
                 <h1 class="text-5xl md:text-7xl font-black text-slate-900 mb-6 tracking-tight">
                     Secure Your <br><span class="text-blue-600">Neighborhood.</span>
                 </h1>
-                <p class="text-xl text-slate-500 max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-                    Feeling unsafe? Activate SOS to be instantly assigned a "Be on call" volunteer for immediate support.
+                <p class="text-xl text-slate-500 max-w-2xl mx-auto mb-12 font-medium">
+                    Crowdsourced safety intelligence. Pin hazards, report crimes, and access emergency support.
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
-                    <button onclick="window.scrollToId('map')" class="btn-primary w-full sm:w-auto px-10 py-4 rounded-2xl font-bold shadow-xl">Explore Map</button>
-                    <button onclick="window.openReportModal()" class="bg-red-600 text-white w-full sm:w-auto px-10 py-4 rounded-2xl font-bold shadow-xl hover:bg-red-700">Report Crime</button>
+                    <button onclick="window.openReportModal()" class="bg-red-600 text-white w-full sm:w-auto px-10 py-4 rounded-2xl font-black shadow-xl hover:bg-red-700 transition-all">REPORT INCIDENT</button>
+                    <button onclick="window.scrollToId('map')" class="bg-slate-900 text-white w-full sm:w-auto px-10 py-4 rounded-2xl font-black shadow-xl hover:bg-slate-800">EXPLORE MAP</button>
                 </div>
             </div>
         </header>
 
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-32">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-24">
+            <!-- Map Section -->
             <section id="map" class="bg-slate-100 p-8 md:p-12 rounded-[3rem]">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-10">
                     <div>
                         <h2 class="text-4xl font-black text-slate-900 leading-tight">Safety Map</h2>
-                        <p class="text-slate-500 mt-4">Report warning locations at any address.</p>
-                        <form onsubmit="window.handleMapReport(event)" class="mt-8 space-y-4 bg-white p-6 rounded-3xl shadow-md">
-                            <input type="text" id="map-address" required placeholder="Enter Address (e.g. New Delhi)" class="w-full px-4 py-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
-                            <textarea id="map-warning-detail" required placeholder="Warning details" class="w-full px-4 py-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
-                            <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-xl font-black">PIN WARNING</button>
+                        <p class="text-slate-500 mt-4 mb-8">Mark suspicious activity or dangerous locations to warn others in real-time.</p>
+                        <form id="map-warning-form" class="space-y-4 bg-white p-6 rounded-3xl shadow-sm">
+                            <input type="text" id="map-address" required placeholder="Location Name / Area" class="w-full px-4 py-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
+                            <textarea id="map-warning-detail" required placeholder="Describe the hazard..." class="w-full px-4 py-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+                            <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black hover:bg-slate-800 transition-colors">PIN WARNING TO MAP</button>
                         </form>
                     </div>
                     <div class="map-frame-container">
@@ -307,131 +167,83 @@
                 </div>
             </section>
 
-            <section id="volunteers" class="bg-slate-900 text-white rounded-[3rem] p-12">
-                <div class="max-w-3xl">
-                    <h2 class="text-4xl font-black mb-6" id="vol-section-title">Be on call.</h2>
-                    <p class="text-slate-400 mb-8 font-medium">Join the Citizen Watch Program. Once registered, the system may assign you to support nearby users who feel threatened.</p>
-                    <div id="vol-action-container">
-                        <button onclick="window.openVolunteerModal()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold shadow-xl transition-all">Join Program</button>
+            <!-- Incident Feed for Citizens -->
+            <section id="incident-feed" class="bg-white p-12 rounded-[3rem] border border-slate-200">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-4xl font-black text-slate-900">Recent Reports</h2>
+                        <p class="text-slate-500 mt-2">Verified community reports from the last 24 hours.</p>
                     </div>
+                </div>
+                <div id="citizen-incident-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic Reports -->
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- EMERGENCY MAP VIEW -->
-    <div id="emergency-map-view" class="hidden min-h-screen pt-32 pb-20 px-4 md:px-8 bg-slate-50">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-10">
-                <div>
-                    <h1 class="text-4xl font-black text-slate-900">SOS Command Center</h1>
-                    <p class="text-slate-500 font-medium">Tracking all active SOS triggers.</p>
-                </div>
-                <div class="bg-red-600 text-white px-6 py-3 rounded-2xl shadow-lg flex items-center space-x-3 animate-pulse">
-                    <i class="fas fa-satellite-dish"></i>
-                    <span class="text-xs font-black uppercase tracking-widest">Live Emergency Tracking</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div class="lg:col-span-3">
-                    <div class="map-frame-container" style="height: 600px;">
-                        <div id="sos-leaflet-map"></div>
-                    </div>
-                </div>
-                <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
-                        <h3 class="font-black text-slate-900 text-sm uppercase tracking-widest mb-6">Active Signals</h3>
-                        <div id="sos-list-sidebar" class="space-y-4"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- LE VIEW -->
     <div id="le-view" class="hidden min-h-screen pt-32 pb-20 px-4 md:px-8 bg-slate-100">
         <div class="max-w-7xl mx-auto">
-            <h1 class="text-4xl font-black text-slate-900 mb-10">Law Enforcement Portal</h1>
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10">
+                <h1 class="text-4xl font-black text-slate-900">Law Enforcement Portal</h1>
+                <div class="flex space-x-4">
+                    <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200">
                         <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Active SOS</p>
-                        <p id="le-sos-count" class="text-4xl font-black text-red-600">0</p>
+                        <p id="le-sos-count" class="text-2xl font-black text-red-600">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Volunteers</p>
-                        <p id="le-vol-count" class="text-4xl font-black text-blue-600">0</p>
+                    <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Total Reports</p>
+                        <p id="le-total-reports" class="text-2xl font-black text-blue-600">0</p>
                     </div>
                 </div>
-                <div class="lg:col-span-3">
-                    <div id="le-sos-list" class="bg-white rounded-3xl shadow-sm border border-slate-200 divide-y overflow-hidden">
-                        <div class="p-8 text-center text-slate-400 italic">No signals active.</div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- SOS Tracking -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 bg-slate-50 border-b border-slate-200">
+                        <h3 class="font-black text-sm uppercase tracking-widest text-red-600">Active SOS Signals</h3>
+                    </div>
+                    <div id="le-sos-list" class="divide-y overflow-y-auto h-[500px]">
+                        <div class="p-8 text-center text-slate-400 italic">No active distress signals.</div>
+                    </div>
+                </div>
+
+                <!-- Incident Management -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 bg-slate-50 border-b border-slate-200">
+                        <h3 class="font-black text-sm uppercase tracking-widest text-slate-900">Incident Report Log</h3>
+                    </div>
+                    <div id="le-incident-list" class="divide-y overflow-y-auto h-[500px]">
+                        <div class="p-8 text-center text-slate-400 italic">No reports logged yet.</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Chat Widget -->
-    <div id="chat-widget" class="fixed bottom-6 left-6 flex flex-col items-start">
-        <div id="chat-panel" class="hidden chat-panel bg-white rounded-3xl shadow-2xl border border-slate-200 mb-4 overflow-hidden">
-            <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
-                <h4 class="font-black text-sm uppercase tracking-widest">Community Hub</h4>
-                <button onclick="window.toggleChat()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="chat-messages-view" class="flex-grow flex flex-col h-full bg-white">
-                <div id="message-container" class="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-hide"></div>
-                <div class="p-4 border-t border-slate-100 flex space-x-2">
-                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-grow px-4 py-2 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-sm focus:ring-2 focus:ring-slate-900 outline-none">
-                    <button onclick="window.sendMessage()" class="bg-slate-900 text-white p-2 rounded-xl w-10 h-10 flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
-                </div>
+    <!-- EMERGENCY MAP VIEW (Shared Tracking) -->
+    <div id="emergency-map-view" class="hidden min-h-screen pt-32 pb-20 px-4 bg-slate-50">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-4xl font-black text-slate-900 mb-6">Live Response Map</h1>
+            <div class="map-frame-container" style="height: 650px;">
+                <div id="sos-leaflet-map"></div>
             </div>
         </div>
-        <button onclick="window.toggleChat()" class="bg-slate-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition-transform">
-            <i class="fas fa-comments"></i>
-        </button>
     </div>
 
-    <!-- Modals -->
+    <!-- Report Modal -->
     <div id="reportModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative overflow-y-auto max-h-[95vh]">
+        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black">Report Incident</h3>
                 <button onclick="window.closeReportModal()"><i class="fas fa-times text-xl text-slate-400"></i></button>
             </div>
-            <form onsubmit="window.handleReportSubmit(event)" class="space-y-6">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Photo Evidence (Optional)</label>
-                    <div id="incident-photo-container" class="photo-preview" onclick="document.getElementById('incident-photo-input').click()">
-                        <div id="photo-placeholder-content" class="text-center">
-                            <i class="fas fa-camera text-3xl text-slate-300 mb-2"></i>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to upload photo</p>
-                        </div>
-                        <img id="photo-preview-img" class="hidden">
-                        <button type="button" id="remove-photo-btn" class="hidden remove-photo-btn" onclick="window.clearIncidentPhoto(event)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    <input type="file" id="incident-photo-input" class="hidden" accept="image/*" onchange="window.handlePhotoSelect(this)">
-                </div>
-                <input id="incident-type" type="text" placeholder="Incident Type" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
-                <textarea id="incident-details" placeholder="Details..." rows="3" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
-                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black shadow-lg">LOG ENCRYPTED REPORT</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="volunteerModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-black">Be On Call</h3>
-                <button onclick="window.closeVolunteerModal()"><i class="fas fa-times text-xl text-slate-400"></i></button>
-            </div>
-            <form onsubmit="window.handleRegistration(event)" class="space-y-6">
-                <input id="vol-name" type="text" placeholder="Full Name" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none">
-                <input id="vol-phone" type="tel" placeholder="10-digit Phone" pattern="[0-9]{10}" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none">
-                <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black">REGISTER NOW</button>
+            <form id="incident-report-form" class="space-y-6">
+                <input id="incident-type" type="text" placeholder="Incident Category (e.g. Theft, Harassment)" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
+                <textarea id="incident-details" placeholder="Describe what happened..." rows="4" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black shadow-lg">SUBMIT SECURE REPORT</button>
             </form>
         </div>
     </div>
@@ -443,270 +255,225 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- FIREBASE CONFIGURATION ---
-        const fallbackConfig = {
-            apiKey: "AIzaSyAWh2RWD7DRJenPhg-_F3SrbTt9ZvfMb58",
-            authDomain: "codecraft-ba355.firebaseapp.com",
-            projectId: "codecraft-ba355",
-            storageBucket: "codecraft-ba355.firebasestorage.app",
-            messagingSenderId: "462067380594",
-            appId: "1:462067380594:web:0f94e2c2b9d60bbc236deb"
-        };
-
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
+        const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // Critical: Use environment appId to match Firestore Rules
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-production-v2';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-v3';
 
         let user = null;
-        let map, sosMap;
-        let emergencyMode = false;
-        let volunteersList = [];
-        let sosMarkers = {};
-        let currentIncidentImageData = null;
+        let citizenMap, emergencyMap;
+        let emergencyActive = false;
+        let markersOnCitizenMap = [];
+        let sosMarkersOnEmergencyMap = {};
 
-        // Path Rule 1: /artifacts/{appId}/public/data/{collectionName}
         const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
-
-        // Path Rule 1 (Document): /artifacts/{appId}/public/data/{collectionName}/{docId}
         const getDocRef = (coll, id) => doc(db, 'artifacts', appId, 'public', 'data', coll, id);
 
-        // Authentication & Initialization
+        // Auth initialization
         const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("Auth Failure:", err);
-                window.showToast("Connection Error. Please check settings.");
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
             }
         };
 
-        // Listen for auth state before starting listeners (Rule 3)
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
-                console.log("App ready for user:", u.uid);
-                setupListeners();
-                setupMaps();
-            } else {
-                console.warn("Waiting for authentication...");
+                console.log("Authenticated as:", u.uid);
+                startListeners();
+                initMaps();
             }
         });
 
-        const setupListeners = () => {
+        const startListeners = () => {
             if (!user) return;
-            
-            // Sync Volunteers
-            onSnapshot(getColl('volunteers'), (snap) => {
-                volunteersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderLePortal();
-            }, (err) => {
-                console.error("Volunteers Listen Error:", err);
-            });
 
-            // Sync SOS Signals
+            // 1. Sync Map Warnings (Pins)
+            onSnapshot(getColl('map_warnings'), (snap) => {
+                // Clear existing markers
+                markersOnCitizenMap.forEach(m => citizenMap.removeLayer(m));
+                markersOnCitizenMap = [];
+                
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    const marker = L.marker([data.lat, data.lng], {
+                        icon: L.divIcon({
+                            className: 'warning-marker',
+                            html: `<i class="fas fa-exclamation-triangle warning-marker-icon"></i>`
+                        })
+                    }).addTo(citizenMap).bindPopup(`<b>${data.address}</b><br>${data.detail}`);
+                    markersOnCitizenMap.push(marker);
+                });
+            }, (err) => console.error("Warnings Sync Error:", err));
+
+            // 2. Sync Incident Reports (Feed & LE Portal)
+            onSnapshot(getColl('reports'), (snap) => {
+                const reports = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp);
+                renderReports(reports);
+            }, (err) => console.error("Reports Sync Error:", err));
+
+            // 3. Sync SOS Signals (LE & Emergency Map)
             onSnapshot(getColl('sos_signals'), (snap) => {
                 const signals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderSosSignals(signals);
-                renderLePortal(signals);
-            }, (err) => {
-                console.error("SOS Listen Error:", err);
-            });
-
-            // Sync Chat (Sort in memory - Rule 2)
-            onSnapshot(getColl('messages'), (snap) => {
-                const msgs = snap.docs.map(d => d.data()).sort((a,b) => a.sentAt - b.sentAt);
-                const container = document.getElementById('message-container');
-                container.innerHTML = msgs.map(m => `
-                    <div class="flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}">
-                        <p class="text-[9px] font-black text-slate-400 mb-1 uppercase">${m.name}</p>
-                        <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${m.uid === user.uid ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}">
-                            ${m.text}
-                        </div>
-                    </div>
-                `).join('');
-                container.scrollTop = container.scrollHeight;
-            }, (err) => {
-                console.error("Chat Listen Error:", err);
-                document.getElementById('message-container').innerHTML = `<div class="p-4 text-center text-xs text-red-500 font-bold">Chat offline. Check Firestore Rules.</div>`;
-            });
+                renderSosData(signals);
+            }, (err) => console.error("SOS Sync Error:", err));
         };
 
-        const setupMaps = () => {
-            if (!map) {
-                map = L.map('leaflet-map', { scrollWheelZoom: false }).setView([28.6139, 77.2090], 11);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        const initMaps = () => {
+            if (!citizenMap) {
+                citizenMap = L.map('leaflet-map', { scrollWheelZoom: false }).setView([28.6139, 77.2090], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(citizenMap);
             }
         };
 
-        window.handlePhotoSelect = (input) => {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                currentIncidentImageData = e.target.result;
-                const previewImg = document.getElementById('photo-preview-img');
-                previewImg.src = e.target.result;
-                previewImg.classList.remove('hidden');
-                document.getElementById('photo-placeholder-content').classList.add('hidden');
-                document.getElementById('remove-photo-btn').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        };
-
-        window.clearIncidentPhoto = (e) => {
-            if (e) e.stopPropagation();
-            currentIncidentImageData = null;
-            document.getElementById('incident-photo-input').value = "";
-            document.getElementById('photo-preview-img').classList.add('hidden');
-            document.getElementById('photo-placeholder-content').classList.remove('hidden');
-            document.getElementById('remove-photo-btn').classList.add('hidden');
-        };
-
-        window.handleReportSubmit = async (e) => {
-            e.preventDefault();
-            if (!user) { window.showToast("Reconnecting..."); return; }
-            try {
-                await addDoc(getColl('reports'), {
-                    uid: user.uid,
-                    type: document.getElementById('incident-type').value,
-                    details: document.getElementById('incident-details').value,
-                    timestamp: Timestamp.now()
-                });
-                window.showToast("Incident report logged.");
-                window.closeReportModal();
-                e.target.reset();
-            } catch (err) {
-                console.error("Report Save Error:", err);
-                window.showToast("Report failed. Ensure Firestore rules allow writes.");
-            }
-        };
-
-        window.handleRegistration = async (e) => {
-            e.preventDefault();
-            if (!user) { window.showToast("Connecting..."); return; }
-            try {
-                await setDoc(getDocRef('volunteers', user.uid), {
-                    name: document.getElementById('vol-name').value,
-                    phone: document.getElementById('vol-phone').value,
-                    uid: user.uid,
-                    joinedAt: Timestamp.now()
-                });
-                window.closeVolunteerModal();
-                document.getElementById('on-call-status').classList.remove('hidden');
-                window.showToast("Successfully registered.");
-            } catch (err) {
-                console.error("Vol Reg Error:", err);
-                window.showToast("Registration failed. Check rules.");
-            }
-        };
-
-        window.sendMessage = async () => {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text || !user) return;
-            try {
-                await addDoc(getColl('messages'), { text, uid: user.uid, name: user.uid.slice(-4), sentAt: Timestamp.now() });
-                input.value = '';
-            } catch (err) { window.showToast("Message failed."); }
-        };
-
-        window.toggleEmergencyMode = async () => {
-            if (!user) return;
-            emergencyMode = !emergencyMode;
-            const btn = document.getElementById('emergency-toggle');
-            const indicator = document.getElementById('emergency-indicator');
-            const card = document.getElementById('threat-support-card');
-            const sosRef = getDocRef('sos_signals', user.uid);
-
-            if (emergencyMode) {
-                btn.classList.add('emergency-btn-active');
-                indicator.classList.remove('hidden');
-                let vol = volunteersList[Math.floor(Math.random() * volunteersList.length)] || null;
-                if (vol) {
-                    document.getElementById('assigned-vol-name').innerText = vol.name;
-                    document.getElementById('assigned-vol-phone').innerText = vol.phone;
-                    document.getElementById('assigned-vol-phone').href = `tel:${vol.phone}`;
-                    card.classList.remove('hidden');
-                }
-                await setDoc(sosRef, { uid: user.uid, lat: 28.6139 + (Math.random()-0.5)*0.1, lng: 77.2090 + (Math.random()-0.5)*0.1, volunteer: vol, timestamp: Timestamp.now() });
-                window.showToast("SOS Signal Active.");
-            } else {
-                btn.classList.remove('emergency-btn-active');
-                indicator.classList.add('hidden');
-                card.classList.add('hidden');
-                await deleteDoc(sosRef);
-            }
-        };
-
+        // UI Handlers
         window.switchView = (view) => {
-            document.getElementById('citizen-view').classList.add('hidden');
-            document.getElementById('emergency-map-view').classList.add('hidden');
-            document.getElementById('le-view').classList.add('hidden');
+            const views = ['citizen-view', 'le-view', 'emergency-map-view'];
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            
             if (view === 'citizen') document.getElementById('citizen-view').classList.remove('hidden');
             if (view === 'le') document.getElementById('le-view').classList.remove('hidden');
             if (view === 'emergency-map') {
                 document.getElementById('emergency-map-view').classList.remove('hidden');
-                if (!sosMap) {
-                    sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 11);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
+                if (!emergencyMap) {
+                    emergencyMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 12);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(emergencyMap);
                 }
-                setTimeout(() => sosMap.invalidateSize(), 100);
+                setTimeout(() => emergencyMap.invalidateSize(), 200);
             }
         };
 
-        window.renderSosSignals = (signals) => {
-            if (!sosMap) return;
-            Object.values(sosMarkers).forEach(m => sosMap.removeLayer(m));
-            sosMarkers = {};
-            const list = document.getElementById('sos-list-sidebar');
-            list.innerHTML = '';
-            signals.forEach(s => {
-                const marker = L.marker([s.lat, s.lng], {
-                    icon: L.divIcon({ className: 'sos-gps-marker', html: '<div class="sos-icon-inner"><i class="fas fa-exclamation"></i></div>' })
-                }).addTo(sosMap);
-                sosMarkers[s.id] = marker;
-                const div = document.createElement('div');
-                div.className = "p-4 bg-white border rounded-xl cursor-pointer hover:border-red-500 transition-all";
-                div.innerHTML = `<p class="text-xs font-black text-red-600">ID: ...${s.uid.slice(-6)}</p>`;
-                div.onclick = () => sosMap.flyTo([s.lat, s.lng], 15);
-                list.appendChild(div);
-            });
+        // Handle Pinning Warning
+        document.getElementById('map-warning-form').addEventListener('submit', async (e) => {
+            e.preventDefault(); // CRITICAL: Stop reload
+            if (!user) return;
+
+            const address = document.getElementById('map-address').value;
+            const detail = document.getElementById('map-warning-detail').value;
+
+            try {
+                // Simulation: Geocode near Delhi center
+                const lat = 28.6139 + (Math.random() - 0.5) * 0.15;
+                const lng = 77.2090 + (Math.random() - 0.5) * 0.15;
+
+                await addDoc(getColl('map_warnings'), {
+                    address,
+                    detail,
+                    lat,
+                    lng,
+                    uid: user.uid,
+                    timestamp: Timestamp.now()
+                });
+
+                window.showToast("Location flagged on safety map.");
+                e.target.reset();
+            } catch (err) {
+                window.showToast("Failed to pin. Check connection.");
+            }
+        });
+
+        // Handle Incident Report
+        document.getElementById('incident-report-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!user) return;
+
+            const type = document.getElementById('incident-type').value;
+            const details = document.getElementById('incident-details').value;
+
+            try {
+                await addDoc(getColl('reports'), {
+                    type,
+                    details,
+                    uid: user.uid,
+                    timestamp: Timestamp.now()
+                });
+                window.showToast("Incident report submitted safely.");
+                window.closeReportModal();
+                e.target.reset();
+            } catch (err) {
+                window.showToast("Report failed to upload.");
+            }
+        });
+
+        // Toggle SOS
+        window.toggleEmergencyMode = async () => {
+            if (!user) return;
+            emergencyActive = !emergencyActive;
+            const btn = document.getElementById('emergency-toggle');
+            const sosRef = getDocRef('sos_signals', user.uid);
+
+            if (emergencyActive) {
+                btn.classList.add('emergency-btn-active');
+                await setDoc(sosRef, {
+                    uid: user.uid,
+                    lat: 28.6139 + (Math.random() - 0.5) * 0.1,
+                    lng: 77.2090 + (Math.random() - 0.5) * 0.1,
+                    timestamp: Timestamp.now()
+                });
+                window.showToast("SOS BROADCAST ACTIVE");
+            } else {
+                btn.classList.remove('emergency-btn-active');
+                await deleteDoc(sosRef);
+            }
         };
 
-        window.renderLePortal = (signals = []) => {
+        const renderReports = (reports) => {
+            const feed = document.getElementById('citizen-incident-list');
+            const leList = document.getElementById('le-incident-list');
+            document.getElementById('le-total-reports').innerText = reports.length;
+
+            const html = reports.map(r => `
+                <div class="p-6 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <span class="bg-red-100 text-red-600 text-[10px] font-black px-2 py-1 rounded-md uppercase">${r.type}</span>
+                        <span class="text-[10px] text-slate-400 font-bold">${r.timestamp?.toDate().toLocaleTimeString() || 'Just now'}</span>
+                    </div>
+                    <p class="text-sm text-slate-700 font-medium leading-relaxed">${r.details}</p>
+                </div>
+            `).join('');
+
+            if (feed) feed.innerHTML = html || '<p class="col-span-3 text-center py-10 text-slate-400 italic">No community reports logged in this area.</p>';
+            if (leList) leList.innerHTML = html || '<div class="p-10 text-center text-slate-400">Log clean.</div>';
+        };
+
+        const renderSosData = (signals) => {
             const sc = document.getElementById('le-sos-count');
-            const vc = document.getElementById('le-vol-count');
-            if (sc) sc.innerText = signals.length;
-            if (vc) vc.innerText = volunteersList.length;
             const list = document.getElementById('le-sos-list');
+            if (sc) sc.innerText = signals.length;
+
             if (list) {
                 list.innerHTML = signals.length ? signals.map(s => `
-                    <div class="p-6 flex justify-between items-center hover:bg-slate-50">
-                        <div><h4 class="font-bold">SOS: ...${s.uid.slice(-6)}</h4></div>
-                        <button onclick="window.switchView('emergency-map')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">MONITOR</button>
+                    <div class="p-6 flex justify-between items-center hover:bg-red-50 transition-colors">
+                        <div>
+                            <h4 class="font-black text-red-600">DISTRESS: ...${s.uid.slice(-6)}</h4>
+                            <p class="text-[10px] font-bold text-slate-400">LOC: ${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}</p>
+                        </div>
+                        <button onclick="window.switchView('emergency-map')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black">LOCATE</button>
                     </div>
-                `).join('') : '<div class="p-8 text-center text-slate-400 italic">No signals active.</div>';
+                `).join('') : '<div class="p-10 text-center text-slate-400">All quiet.</div>';
+            }
+
+            // Sync Emergency Map Markers
+            if (emergencyMap) {
+                Object.values(sosMarkersOnEmergencyMap).forEach(m => emergencyMap.removeLayer(m));
+                sosMarkersOnEmergencyMap = {};
+                signals.forEach(s => {
+                    const marker = L.marker([s.lat, s.lng], {
+                        icon: L.divIcon({ className: 'sos-gps-marker', html: '<div class="sos-icon-inner"><i class="fas fa-exclamation"></i></div>' })
+                    }).addTo(emergencyMap);
+                    sosMarkersOnEmergencyMap[s.id] = marker;
+                });
             }
         };
 
-        window.toggleChat = () => document.getElementById('chat-panel').classList.toggle('hidden');
+        // Helper Functions
         window.openReportModal = () => document.getElementById('reportModal').classList.remove('hidden');
-        window.closeReportModal = () => {
-            document.getElementById('reportModal').classList.add('hidden');
-            window.clearIncidentPhoto();
-        };
-        window.openVolunteerModal = () => document.getElementById('volunteerModal').classList.remove('hidden');
-        window.closeVolunteerModal = () => document.getElementById('volunteerModal').classList.add('hidden');
+        window.closeReportModal = () => document.getElementById('reportModal').classList.add('hidden');
         window.scrollToId = (id) => document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
         window.showToast = (msg) => {
             const t = document.getElementById('toast');
@@ -715,7 +482,6 @@
             setTimeout(() => t.classList.add('hidden'), 5000);
         };
 
-        // Final Boot
         initAuth();
     </script>
 </body>
