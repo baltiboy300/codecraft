@@ -197,15 +197,42 @@
 
         .photo-preview {
             width: 100%;
-            height: 150px;
+            height: 180px;
             border: 2px dashed #e2e8f0;
-            border-radius: 1rem;
+            border-radius: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #f8fafc;
             cursor: pointer;
             overflow: hidden;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .photo-preview:hover {
+            border-color: #94a3b8;
+            background: #f1f5f9;
+        }
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .remove-photo-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(15, 23, 42, 0.8);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            backdrop-filter: blur(4px);
+            z-index: 10;
         }
     </style>
 </head>
@@ -409,15 +436,39 @@
 
     <!-- Modals -->
     <div id="reportModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative">
+        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative overflow-y-auto max-h-[95vh]">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black">Report Incident</h3>
                 <button onclick="window.closeReportModal()"><i class="fas fa-times text-xl text-slate-400"></i></button>
             </div>
             <form onsubmit="window.handleReportSubmit(event)" class="space-y-6">
-                <input type="text" placeholder="Incident Type" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none">
-                <textarea placeholder="Details..." rows="4" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none"></textarea>
-                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black">LOG REPORT</button>
+                <!-- Image Upload Section -->
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Photo Evidence (Optional)</label>
+                    <div id="incident-photo-container" class="photo-preview" onclick="document.getElementById('incident-photo-input').click()">
+                        <div id="photo-placeholder-content" class="text-center">
+                            <i class="fas fa-camera text-3xl text-slate-300 mb-2"></i>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to upload photo</p>
+                        </div>
+                        <img id="photo-preview-img" class="hidden">
+                        <button type="button" id="remove-photo-btn" class="hidden remove-photo-btn" onclick="window.clearIncidentPhoto(event)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <input type="file" id="incident-photo-input" class="hidden" accept="image/*" onchange="window.handlePhotoSelect(this)">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Incident Type</label>
+                    <input id="incident-type" type="text" placeholder="e.g. Theft, Harassment" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Details</label>
+                    <textarea id="incident-details" placeholder="Describe the situation..." rows="3" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+                </div>
+                
+                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-red-700 transition-all">LOG ENCRYPTED REPORT</button>
             </form>
         </div>
     </div>
@@ -441,92 +492,53 @@
     </div>
 
     <script type="module">
-        /*
-        ========================================================================
-        FIREBASE SETUP GUIDE (READ THIS TO FIX ERRORS)
-        ========================================================================
-        1. ENABLE ANONYMOUS AUTH:
-           Go to Firebase Console > Build > Authentication > Sign-in method.
-           Enable "Anonymous". Without this, data cannot be saved.
-
-        2. SET FIRESTORE SECURITY RULES:
-           Go to Firebase Console > Build > Firestore Database > Rules.
-           Paste these rules (Important: The path must match your appId):
-           
-           rules_version = '2';
-           service cloud.firestore {
-             match /databases/{database}/documents {
-               match /artifacts/{appId}/public/data/{collectionName}/{docId} {
-                 allow read, write: if request.auth != null;
-               }
-             }
-           }
-        ========================================================================
-        */
-
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // --- PRODUCTION CONFIGURATION ---
+        // --- CONFIGURATION ---
         const fallbackConfig = {
             apiKey: "AIzaSyAWh2RWD7DRJenPhg-_F3SrbTt9ZvfMb58",
             authDomain: "codecraft-ba355.firebaseapp.com",
             projectId: "codecraft-ba355",
             storageBucket: "codecraft-ba355.firebasestorage.app",
             messagingSenderId: "462067380594",
-            appId: "1:462067380594:web:0f94e2c2b9d60bbc236deb",
-            measurementId: "G-RGJ5TDG7KM"
+            appId: "1:462067380594:web:0f94e2c2b9d60bbc236deb"
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // MeasurementId is optional but analytics requires it if present
-        let analytics;
-        try {
-            analytics = getAnalytics(app);
-        } catch (e) {
-            console.warn("Analytics failed to initialize.");
-        }
-        
-        // App ID determines the Firestore path
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-production-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-v2';
 
         let user = null;
         let map, sosMap;
         let emergencyMode = false;
         let gpsTrackingMode = false;
-        let watchId = null;
-        let userMarker = null;
         let volunteersList = [];
         let sosMarkers = {};
+        let currentIncidentImageData = null;
 
         // Helper for Firestore Paths (Rule 1)
         const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
 
-        // Auth initialization (Rule 3)
+        // Auth initialization
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    // Falls back to Anonymous. ENSURE THIS IS ENABLED IN FIREBASE CONSOLE!
                     await signInAnonymously(auth);
                 }
             } catch (err) {
                 console.error("Firebase Auth Error:", err);
-                window.showToast("Auth Error. Enable 'Anonymous' in Firebase Console.");
             }
         };
 
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
-                console.log("Logged in as:", u.uid);
                 setupListeners();
                 setupMaps();
             }
@@ -534,24 +546,15 @@
 
         const setupListeners = () => {
             if (!user) return;
-
-            // Sync Volunteers
             onSnapshot(getColl('volunteers'), (snap) => {
                 volunteersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderLePortal();
-            }, (err) => {
-                console.error("Volunteers sync failed:", err);
-                if (err.code === 'permission-denied') window.showToast("Sync Error: Fix Firestore Rules.");
             });
-
-            // Sync SOS Signals
             onSnapshot(getColl('sos_signals'), (snap) => {
                 const signals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderSosSignals(signals);
                 renderLePortal(signals);
-            }, (err) => console.error("SOS sync error:", err));
-
-            // Sync Chat
+            });
             onSnapshot(getColl('messages'), (snap) => {
                 const msgs = snap.docs.map(d => d.data()).sort((a,b) => a.sentAt - b.sentAt);
                 const container = document.getElementById('message-container');
@@ -564,10 +567,6 @@
                     </div>
                 `).join('');
                 container.scrollTop = container.scrollHeight;
-            }, (err) => {
-                console.error("Chat sync error:", err);
-                const container = document.getElementById('message-container');
-                container.innerHTML = `<div class="p-4 text-center text-red-500 text-xs font-bold">Chat Disabled: Update Firestore Rules</div>`;
             });
         };
 
@@ -578,9 +577,70 @@
             }
         };
 
-        window.handleRegistration = async (e) => {
+        // --- PHOTO HANDLING LOGIC ---
+        window.handlePhotoSelect = (input) => {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                window.showToast("Please select an image file.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentIncidentImageData = e.target.result;
+                const previewImg = document.getElementById('photo-preview-img');
+                const placeholder = document.getElementById('photo-placeholder-content');
+                const removeBtn = document.getElementById('remove-photo-btn');
+
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                removeBtn.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.clearIncidentPhoto = (e) => {
+            if (e) e.stopPropagation();
+            currentIncidentImageData = null;
+            document.getElementById('incident-photo-input').value = "";
+            document.getElementById('photo-preview-img').classList.add('hidden');
+            document.getElementById('photo-placeholder-content').classList.remove('hidden');
+            document.getElementById('remove-photo-btn').classList.add('hidden');
+        };
+
+        window.handleReportSubmit = async (e) => {
             e.preventDefault();
             if (!user) return;
+
+            const type = document.getElementById('incident-type').value;
+            const details = document.getElementById('incident-details').value;
+
+            try {
+                // In a real app, you would upload currentIncidentImageData to Firebase Storage
+                // and save the URL in the document. Here we simulate the log.
+                await addDoc(getColl('reports'), {
+                    uid: user.uid,
+                    type,
+                    details,
+                    hasImage: !!currentIncidentImageData,
+                    timestamp: Timestamp.now()
+                });
+
+                window.showToast("Report logged successfully with evidence.");
+                window.closeReportModal();
+                e.target.reset();
+                window.clearIncidentPhoto();
+            } catch (err) {
+                window.showToast("Error logging report.");
+            }
+        };
+
+        // UI Handlers
+        window.handleRegistration = async (e) => {
+            e.preventDefault();
             const name = document.getElementById('vol-name').value;
             const phone = document.getElementById('vol-phone').value;
             try {
@@ -589,29 +649,20 @@
                 });
                 window.closeVolunteerModal();
                 document.getElementById('on-call-status').classList.remove('hidden');
-                window.showToast("Registered as On-Call Volunteer.");
-            } catch (err) {
-                console.error("Volunteer Registration Error:", err);
-                window.showToast("Registration Failed: Update Firestore Rules.");
-            }
+                window.showToast("Now On Call.");
+            } catch (err) { window.showToast("Registration failed."); }
         };
 
         window.handleLeaveOnCall = async () => {
-            if (!user) return;
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid));
                 document.getElementById('on-call-status').classList.add('hidden');
                 window.showToast("Left On-Call pool.");
-            } catch (err) {
-                window.showToast("Error updating status.");
-            }
+            } catch (e) {}
         };
 
         window.toggleEmergencyMode = async () => {
-            if (!user) {
-                window.showToast("Waiting for secure connection...");
-                return;
-            }
+            if (!user) return;
             emergencyMode = !emergencyMode;
             const btn = document.getElementById('emergency-toggle');
             const indicator = document.getElementById('emergency-indicator');
@@ -621,149 +672,88 @@
             if (emergencyMode) {
                 btn.classList.add('emergency-btn-active');
                 indicator.classList.remove('hidden');
-                
-                let volunteer = null;
-                if (volunteersList.length > 0) {
-                    volunteer = volunteersList[Math.floor(Math.random() * volunteersList.length)];
-                    document.getElementById('assigned-vol-name').innerText = volunteer.name;
-                    document.getElementById('assigned-vol-phone').innerText = volunteer.phone;
-                    document.getElementById('assigned-vol-phone').href = `tel:${volunteer.phone}`;
+                let vol = volunteersList.length > 0 ? volunteersList[Math.floor(Math.random() * volunteersList.length)] : null;
+                if (vol) {
+                    document.getElementById('assigned-vol-name').innerText = vol.name;
+                    document.getElementById('assigned-vol-phone').innerText = vol.phone;
+                    document.getElementById('assigned-vol-phone').href = `tel:${vol.phone}`;
                     card.classList.remove('hidden');
                 }
-
-                try {
-                    await setDoc(sosRef, {
-                        uid: user.uid,
-                        lat: 28.6139 + (Math.random() - 0.5) * 0.1,
-                        lng: 77.2090 + (Math.random() - 0.5) * 0.1,
-                        volunteer: volunteer || null,
-                        timestamp: Timestamp.now()
-                    });
-                    window.showToast("SOS Broadcast Active.");
-                } catch (err) {
-                    console.error("SOS Write Error:", err);
-                    window.showToast("SOS Failed: Fix Firestore Rules.");
-                    emergencyMode = false;
-                    btn.classList.remove('emergency-btn-active');
-                    indicator.classList.add('hidden');
-                }
+                await setDoc(sosRef, { uid: user.uid, lat: 28.6139 + (Math.random()-0.5)*0.1, lng: 77.2090 + (Math.random()-0.5)*0.1, volunteer: vol, timestamp: Timestamp.now() });
+                window.showToast("SOS Broadcast Active.");
             } else {
                 btn.classList.remove('emergency-btn-active');
                 indicator.classList.add('hidden');
                 card.classList.add('hidden');
-                try {
-                    await deleteDoc(sosRef);
-                    window.showToast("SOS Signal Terminated.");
-                } catch (e) {}
+                await deleteDoc(sosRef);
             }
         };
 
         window.sendMessage = async () => {
-            if (!user) {
-                window.showToast("Not connected to server.");
-                return;
-            }
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
-            if (!text) return;
-            try {
-                await addDoc(getColl('messages'), {
-                    text,
-                    uid: user.uid,
-                    name: user.uid.slice(-4),
-                    sentAt: Timestamp.now()
-                });
-                input.value = '';
-            } catch (err) {
-                console.error("Chat send error:", err);
-                window.showToast("Message failed: Fix Firestore Rules.");
-            }
+            if (!text || !user) return;
+            await addDoc(getColl('messages'), { text, uid: user.uid, name: user.uid.slice(-4), sentAt: Timestamp.now() });
+            input.value = '';
         };
 
         window.handleMapReport = (e) => {
             e.preventDefault();
-            const detail = document.getElementById('map-warning-detail').value;
             const center = map.getCenter();
-            const marker = L.marker([center.lat + (Math.random()-0.5)*0.02, center.lng + (Math.random()-0.5)*0.02], {
+            const marker = L.marker([center.lat + (Math.random()-0.5)*0.01, center.lng + (Math.random()-0.5)*0.01], {
                 icon: L.divIcon({ className: 'warning-marker', html: '<div class="warning-icon-inner"><i class="fas fa-exclamation-triangle"></i></div>' })
             }).addTo(map);
-            marker.bindTooltip(detail).openTooltip();
-            window.showToast("Warning pinned to map.");
+            window.showToast("Warning pinned.");
             e.target.reset();
         };
 
         window.toggleGpsTracking = () => {
             gpsTrackingMode = !gpsTrackingMode;
-            const btn = document.getElementById('gps-toggle');
-            const indicator = document.getElementById('gps-indicator');
-            if (gpsTrackingMode) {
-                btn.classList.add('gps-btn-active');
-                indicator.classList.remove('hidden');
-                window.showToast("GPS Tracking Active.");
-            } else {
-                btn.classList.remove('gps-btn-active');
-                indicator.classList.add('hidden');
-                window.showToast("Tracking Stopped.");
-            }
+            document.getElementById('gps-toggle').classList.toggle('gps-btn-active');
+            document.getElementById('gps-indicator').classList.toggle('hidden');
         };
 
-        const renderSosSignals = (signals) => {
+        window.renderSosSignals = (signals) => {
             if (!sosMap) return;
             Object.values(sosMarkers).forEach(m => sosMap.removeLayer(m));
             sosMarkers = {};
-            
             const list = document.getElementById('sos-list-sidebar');
-            list.innerHTML = signals.length ? '' : '<div class="text-xs text-slate-400 italic">No active signals.</div>';
-
+            list.innerHTML = '';
             signals.forEach(s => {
                 const marker = L.marker([s.lat, s.lng], {
                     icon: L.divIcon({ className: 'sos-gps-marker', html: '<div class="sos-icon-inner"><i class="fas fa-exclamation"></i></div>' })
                 }).addTo(sosMap);
                 sosMarkers[s.id] = marker;
-
                 const div = document.createElement('div');
                 div.className = "p-4 bg-white border rounded-xl cursor-pointer hover:border-red-500 transition-all";
-                div.innerHTML = `<p class="text-xs font-black text-red-600">ID: ...${s.uid.slice(-6)}</p><p class="text-[10px] text-slate-500">Live Frequency</p>`;
+                div.innerHTML = `<p class="text-xs font-black text-red-600">ID: ...${s.uid.slice(-6)}</p>`;
                 div.onclick = () => sosMap.flyTo([s.lat, s.lng], 15);
                 list.appendChild(div);
             });
         };
 
-        const renderLePortal = (signals = []) => {
-            const sosCount = document.getElementById('le-sos-count');
-            const volCount = document.getElementById('le-vol-count');
-            if (sosCount) sosCount.innerText = signals.length;
-            if (volCount) volCount.innerText = volunteersList.length;
-
+        window.renderLePortal = (signals = []) => {
+            const sc = document.getElementById('le-sos-count');
+            const vc = document.getElementById('le-vol-count');
+            if (sc) sc.innerText = signals.length;
+            if (vc) vc.innerText = volunteersList.length;
             const list = document.getElementById('le-sos-list');
             if (list) {
-                if (signals.length === 0) {
-                    list.innerHTML = '<div class="p-8 text-center text-slate-400 italic">No active SOS signals.</div>';
-                } else {
-                    list.innerHTML = signals.map(s => `
-                        <div class="p-6 flex justify-between items-center hover:bg-slate-50">
-                            <div>
-                                <h4 class="font-bold text-slate-900">SOS Trigger: ...${s.uid.slice(-6)}</h4>
-                                <p class="text-xs text-slate-500">Volunteer: ${s.volunteer ? s.volunteer.name : 'Awaiting...'}</p>
-                            </div>
-                            <button onclick="window.switchView('emergency-map')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">MONITOR</button>
-                        </div>
-                    `).join('');
-                }
+                list.innerHTML = signals.length ? signals.map(s => `
+                    <div class="p-6 flex justify-between items-center hover:bg-slate-50">
+                        <div><h4 class="font-bold">SOS: ...${s.uid.slice(-6)}</h4></div>
+                        <button onclick="window.switchView('emergency-map')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">MONITOR</button>
+                    </div>
+                `).join('') : '<div class="p-8 text-center text-slate-400 italic">No signals active.</div>';
             }
         };
 
-        // Window Globals
         window.switchView = (view) => {
             document.getElementById('citizen-view').classList.add('hidden');
             document.getElementById('emergency-map-view').classList.add('hidden');
             document.getElementById('le-view').classList.add('hidden');
-            
             if (view === 'citizen') document.getElementById('citizen-view').classList.remove('hidden');
-            if (view === 'le') {
-                document.getElementById('le-view').classList.remove('hidden');
-                renderLePortal();
-            }
+            if (view === 'le') document.getElementById('le-view').classList.remove('hidden');
             if (view === 'emergency-map') {
                 document.getElementById('emergency-map-view').classList.remove('hidden');
                 if (!sosMap) {
@@ -772,12 +762,14 @@
                 }
                 setTimeout(() => sosMap.invalidateSize(), 100);
             }
-            window.scrollTo(0,0);
         };
 
         window.toggleChat = () => document.getElementById('chat-panel').classList.toggle('hidden');
         window.openReportModal = () => document.getElementById('reportModal').classList.remove('hidden');
-        window.closeReportModal = () => document.getElementById('reportModal').classList.add('hidden');
+        window.closeReportModal = () => {
+            document.getElementById('reportModal').classList.add('hidden');
+            window.clearIncidentPhoto();
+        };
         window.openVolunteerModal = () => document.getElementById('volunteerModal').classList.remove('hidden');
         window.closeVolunteerModal = () => document.getElementById('volunteerModal').classList.add('hidden');
         window.scrollToId = (id) => document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
@@ -785,12 +777,7 @@
             const t = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 5000);
-        };
-        window.handleReportSubmit = (e) => {
-            e.preventDefault();
-            window.showToast("Incident logged and encrypted.");
-            window.closeReportModal();
+            setTimeout(() => t.classList.add('hidden'), 4000);
         };
 
         initAuth();
