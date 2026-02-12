@@ -56,6 +56,24 @@
             animation: bounce 2s infinite;
         }
 
+        .user-gps-marker { background: none; border: none; }
+        .gps-icon-inner {
+            width: 20px; height: 20px;
+            background: #3b82f6; border: 3px solid white;
+            border-radius: 50%; box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+            position: relative;
+        }
+        .gps-icon-inner::after {
+            content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px;
+            border-radius: 50%; border: 2px solid #3b82f6;
+            animation: gps-pulse 2s infinite;
+        }
+
+        @keyframes gps-pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
         .sos-gps-marker { background: none; border: none; }
         .sos-icon-inner {
             width: 24px; height: 24px;
@@ -95,6 +113,25 @@
             object-fit: cover;
             display: none;
         }
+
+        /* Chat Styling */
+        .chat-panel {
+            height: 450px;
+            width: 320px;
+            max-width: 90vw;
+            display: flex;
+            flex-direction: column;
+        }
+        .message-bubble {
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+
+        .gps-btn-active {
+            background-color: #3b82f6 !important;
+            color: white !important;
+            border-color: #3b82f6 !important;
+        }
     </style>
 </head>
 <body id="app-body">
@@ -118,6 +155,11 @@
                         <a href="javascript:void(0)" onclick="window.switchView('emergency-map')" class="text-red-600 hover:text-red-700">Emergency Map</a>
                     </div>
 
+                    <button id="gps-toggle" onclick="window.toggleGpsTracking()" class="flex items-center space-x-2 px-3 py-2 rounded-xl border-2 border-blue-100 text-blue-600 font-bold text-xs transition-all hover:bg-blue-50">
+                        <i class="fas fa-location-crosshairs"></i>
+                        <span class="hidden sm:inline">GPS</span>
+                    </button>
+
                     <button id="emergency-toggle" onclick="window.toggleEmergencyMode()" class="flex items-center space-x-2 px-4 py-2 rounded-xl bg-red-50 border-2 border-red-100 text-red-600 font-bold text-xs transition-all hover:bg-red-600 hover:text-white">
                         <i class="fas fa-shield-alt"></i>
                         <span>SOS</span>
@@ -135,6 +177,11 @@
     <div id="citizen-view" class="block">
         <header class="pt-40 pb-20 px-4 bg-gradient-to-b from-white to-slate-50 text-center">
             <div class="max-w-7xl mx-auto">
+                <div id="gps-indicator" class="hidden inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-black mb-8 shadow-xl animate-pulse">
+                    <i class="fas fa-satellite"></i>
+                    <span>LIVE GPS TRACKING ACTIVE</span>
+                </div>
+
                 <h1 class="text-5xl md:text-7xl font-black text-slate-900 mb-6 tracking-tight">
                     See Something, <br><span class="text-blue-600">Report it.</span>
                 </h1>
@@ -166,6 +213,10 @@
                             <div class="flex items-center space-x-3 text-sm font-bold text-slate-700">
                                 <span class="w-3 h-3 rounded-full bg-blue-500"></span>
                                 <span>Community Warnings</span>
+                            </div>
+                            <div class="flex items-center space-x-3 text-sm font-bold text-slate-700">
+                                <span class="w-3 h-3 rounded-full bg-blue-400"></span>
+                                <span>Your GPS Location</span>
                             </div>
                         </div>
                     </div>
@@ -223,6 +274,26 @@
                 <div class="p-8 text-center text-slate-400 italic">No signals active.</div>
             </div>
         </div>
+    </div>
+
+    <!-- Chat Widget -->
+    <div id="chat-widget" class="fixed bottom-6 right-6 flex flex-col items-end z-[100]">
+        <div id="chat-panel" class="hidden chat-panel bg-white rounded-[2rem] shadow-2xl border border-slate-200 mb-4 overflow-hidden">
+            <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+                <h4 class="font-black text-xs uppercase tracking-widest">Community Hub</h4>
+                <button onclick="window.toggleChat()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="message-container" class="flex-grow overflow-y-auto p-4 space-y-4 bg-slate-50">
+                <!-- Messages injected here -->
+            </div>
+            <div class="p-3 bg-white border-t border-slate-100 flex space-x-2">
+                <input type="text" id="chat-input" placeholder="Say something..." class="flex-grow px-4 py-2 rounded-xl bg-slate-100 border-none ring-1 ring-slate-200 text-sm outline-none focus:ring-2 focus:ring-slate-900">
+                <button onclick="window.sendMessage()" class="bg-slate-900 text-white p-2 rounded-xl w-10 h-10 flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <button onclick="window.toggleChat()" class="bg-slate-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition-transform">
+            <i class="fas fa-comments"></i>
+        </button>
     </div>
 
     <!-- REPORT MODAL -->
@@ -297,6 +368,9 @@
         let map, sosMap;
         let currentPhotoBase64 = null;
         let mapMarkers = [];
+        let userMarker = null;
+        let gpsTrackingMode = false;
+        let watchId = null;
 
         // UI HELPERS
         window.showToast = (msg, isError = false) => {
@@ -318,6 +392,7 @@
         };
 
         window.scrollToId = (id) => document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        window.toggleChat = () => document.getElementById('chat-panel').classList.toggle('hidden');
 
         // PHOTO HANDLING
         window.handlePhotoSelect = (e) => {
@@ -390,15 +465,28 @@
             if (!user) return;
 
             // Listen for Public Reports
-            const reportsQuery = collection(db, 'artifacts', appId, 'public', 'data', 'reports');
-            onSnapshot(reportsQuery, (snap) => {
+            const reportsRef = collection(db, 'artifacts', appId, 'public', 'data', 'reports');
+            onSnapshot(reportsRef, (snap) => {
                 const reports = snap.docs.map(d => ({ id: d.id, ...d.data() }))
                     .sort((a, b) => b.timestamp - a.timestamp);
                 renderReports(reports);
                 updateMapMarkers(reports);
-            }, (err) => {
-                console.error("Firestore Error:", err);
-                window.showToast("Sync Error. Fix your Firestore rules!", true);
+            });
+
+            // Listen for Messages
+            const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+            onSnapshot(messagesRef, (snap) => {
+                const msgs = snap.docs.map(d => d.data()).sort((a, b) => a.sentAt - b.sentAt);
+                const container = document.getElementById('message-container');
+                container.innerHTML = msgs.map(m => `
+                    <div class="flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}">
+                        <span class="text-[9px] font-black text-slate-400 mb-1 uppercase">${m.uid.slice(-4)}</span>
+                        <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${m.uid === user.uid ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 shadow-sm'}">
+                            ${m.text}
+                        </div>
+                    </div>
+                `).join('');
+                container.scrollTop = container.scrollHeight;
             });
 
             // SOS Sync
@@ -411,7 +499,7 @@
         const renderReports = (reports) => {
             const grid = document.getElementById('reports-grid');
             if (reports.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400 font-bold">No public reports yet. Be the first to secure your neighborhood.</div>`;
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400 font-bold">No public reports yet.</div>`;
                 return;
             }
 
@@ -466,7 +554,6 @@
             const list = document.getElementById('sos-list-sidebar');
             const leList = document.getElementById('le-sos-list');
             if (list) list.innerHTML = signals.length ? '' : '<p class="text-xs text-slate-400 italic">No signals.</p>';
-            
             if (leList) leList.innerHTML = signals.length ? '' : '<div class="p-8 text-center text-slate-400 italic">No active signals.</div>';
 
             signals.forEach(s => {
@@ -488,6 +575,63 @@
                     leList.appendChild(leItem);
                 }
             });
+        };
+
+        window.sendMessage = async () => {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text || !user) return;
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+                    text,
+                    uid: user.uid,
+                    sentAt: Timestamp.now()
+                });
+                input.value = '';
+            } catch (e) {
+                window.showToast("Message failed to send.", true);
+            }
+        };
+
+        window.toggleGpsTracking = () => {
+            gpsTrackingMode = !gpsTrackingMode;
+            const btn = document.getElementById('gps-toggle');
+            const indicator = document.getElementById('gps-indicator');
+
+            if (gpsTrackingMode) {
+                if ("geolocation" in navigator) {
+                    btn.classList.add('gps-btn-active');
+                    indicator.classList.remove('hidden');
+                    window.showToast("Live GPS tracking started.");
+
+                    watchId = navigator.geolocation.watchPosition((pos) => {
+                        const { latitude, longitude } = pos.coords;
+                        if (!userMarker) {
+                            userMarker = L.marker([latitude, longitude], {
+                                icon: L.divIcon({ className: 'user-gps-marker', html: '<div class="gps-icon-inner"></div>' })
+                            }).addTo(map);
+                        } else {
+                            userMarker.setLatLng([latitude, longitude]);
+                        }
+                        map.panTo([latitude, longitude]);
+                    }, (err) => {
+                        window.showToast("GPS Error: Permission denied.", true);
+                        window.toggleGpsTracking();
+                    });
+                } else {
+                    window.showToast("GPS not supported by browser.", true);
+                }
+            } else {
+                btn.classList.remove('gps-btn-active');
+                indicator.classList.add('hidden');
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                    userMarker = null;
+                }
+                window.showToast("GPS tracking stopped.");
+            }
         };
 
         window.handleReportSubmit = async (e) => {
@@ -517,7 +661,6 @@
                 window.closeReportModal();
                 e.target.reset();
             } catch (err) {
-                console.error(err);
                 window.showToast("Upload failed. Check your Firebase Rules.", true);
             } finally {
                 btn.disabled = false;
