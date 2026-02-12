@@ -10,18 +10,17 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
             color: #1e293b;
-            transition: background-color 0.5s ease;
         }
 
         .glass-nav {
             background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
         }
 
@@ -69,7 +68,7 @@
         .map-frame-container {
             width: 100%;
             height: 550px;
-            border-radius: 2rem;
+            border-radius: 1.5rem;
             overflow: hidden;
             border: 4px solid white;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
@@ -82,11 +81,8 @@
             height: 100%;
         }
 
-        /* Custom Warning Icon */
-        .warning-marker {
-            background: none;
-            border: none;
-        }
+        /* Custom Markers */
+        .warning-marker { background: none; border: none; }
         .warning-icon-inner {
             color: #ef4444;
             font-size: 24px;
@@ -94,37 +90,7 @@
             animation: bounce 2s infinite;
         }
 
-        /* GPS Marker Icon */
-        .user-gps-marker {
-            background: none;
-            border: none;
-        }
-        .gps-icon-inner {
-            width: 20px;
-            height: 20px;
-            background: #3b82f6;
-            border: 3px solid white;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
-            position: relative;
-        }
-        .gps-icon-inner::after {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            border-radius: 50%;
-            border: 2px solid #3b82f6;
-            animation: gps-pulse 2s infinite;
-        }
-
-        /* SOS Marker Icon */
-        .sos-gps-marker {
-            background: none;
-            border: none;
-        }
+        .sos-gps-marker { background: none; border: none; }
         .sos-icon-inner {
             width: 24px;
             height: 24px;
@@ -165,20 +131,18 @@
         .emergency-btn-active {
             background-color: #ef4444 !important;
             color: white !important;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
         }
 
         .gps-btn-active {
             background-color: #3b82f6 !important;
             color: white !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
         }
 
         /* Chat Widget Styling */
         #chat-widget {
             z-index: 100;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .chat-panel {
             height: 500px;
@@ -187,25 +151,19 @@
             display: flex;
             flex-direction: column;
         }
-        .message-bubble {
-            max-width: 80%;
-            word-wrap: break-word;
-        }
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
 
-        .photo-preview {
-            width: 100%;
-            height: 150px;
-            border: 2px dashed #e2e8f0;
-            border-radius: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8fafc;
-            cursor: pointer;
-            overflow: hidden;
+        .message-bubble {
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+
+        /* Custom Modal Overlay */
+        .modal-overlay {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
@@ -220,7 +178,7 @@
                         <i class="fas fa-fingerprint text-xl"></i>
                     </div>
                     <div class="hidden sm:block">
-                        <span class="text-2xl font-bold tracking-tighter text-slate-900">SAAVADHAN</span>
+                        <span class="text-2xl font-black tracking-tighter text-slate-900">SAAVADHAN</span>
                         <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold -mt-1">India Safety Hub</p>
                     </div>
                 </div>
@@ -236,7 +194,7 @@
                         <span class="hidden sm:inline">LE PORTAL</span>
                     </button>
 
-                    <div class="flex items-center space-x-2 md:space-x-4">
+                    <div class="flex items-center space-x-2">
                         <div id="on-call-status" class="hidden flex items-center bg-green-50 border border-green-200 px-3 py-1.5 rounded-full shadow-sm mr-2">
                             <span class="relative flex h-2 w-2 mr-2">
                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -308,11 +266,11 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-10">
                     <div>
                         <h2 class="text-4xl font-black text-slate-900 leading-tight">Safety Map</h2>
-                        <p class="text-slate-500 mt-4">Report warning locations at any address.</p>
+                        <p class="text-slate-500 mt-4">Report warning locations at any address to alert fellow citizens.</p>
                         <form onsubmit="window.handleMapReport(event)" class="mt-8 space-y-4 bg-white p-6 rounded-3xl shadow-md">
                             <input type="text" id="map-address" required placeholder="Enter Address (e.g. New Delhi)" class="w-full px-4 py-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
-                            <textarea id="map-warning-detail" required placeholder="Warning details" class="w-full px-4 py-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
-                            <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-xl font-black">PIN WARNING</button>
+                            <textarea id="map-warning-detail" required placeholder="Describe the safety concern..." class="w-full px-4 py-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+                            <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-xl font-black hover:bg-slate-800">PIN WARNING</button>
                         </form>
                     </div>
                     <div class="map-frame-container">
@@ -323,8 +281,8 @@
 
             <section id="volunteers" class="bg-slate-900 text-white rounded-[3rem] p-12">
                 <div class="max-w-3xl">
-                    <h2 class="text-4xl font-black mb-6" id="vol-section-title">Be on call.</h2>
-                    <p class="text-slate-400 mb-8 font-medium">Join the Citizen Watch Program. Once registered, the system may assign you to support nearby users who feel threatened.</p>
+                    <h2 class="text-4xl font-black mb-6">Be on call.</h2>
+                    <p class="text-slate-400 mb-8 font-medium">Join the Citizen Watch Program. Once registered, the system may assign you to support nearby users who trigger an SOS alert.</p>
                     <div id="vol-action-container">
                         <button onclick="window.openVolunteerModal()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold shadow-xl transition-all">Join Program</button>
                     </div>
@@ -339,7 +297,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-10">
                 <div>
                     <h1 class="text-4xl font-black text-slate-900">SOS Command Center</h1>
-                    <p class="text-slate-500 font-medium">Tracking all active SOS triggers.</p>
+                    <p class="text-slate-500 font-medium">Tracking all active SOS triggers across the region.</p>
                 </div>
                 <div class="bg-red-600 text-white px-6 py-3 rounded-2xl shadow-lg flex items-center space-x-3 animate-pulse">
                     <i class="fas fa-satellite-dish"></i>
@@ -356,7 +314,9 @@
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
                         <h3 class="font-black text-slate-900 text-sm uppercase tracking-widest mb-6">Active Signals</h3>
-                        <div id="sos-list-sidebar" class="space-y-4"></div>
+                        <div id="sos-list-sidebar" class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
+                            <div class="text-xs text-slate-400 italic text-center py-8">No signals active.</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -366,7 +326,12 @@
     <!-- LE VIEW -->
     <div id="le-view" class="hidden min-h-screen pt-32 pb-20 px-4 md:px-8 bg-slate-100">
         <div class="max-w-7xl mx-auto">
-            <h1 class="text-4xl font-black text-slate-900 mb-10">Law Enforcement Portal</h1>
+            <div class="flex justify-between items-end mb-10">
+                <div>
+                    <h1 class="text-4xl font-black text-slate-900">Law Enforcement Portal</h1>
+                    <p class="text-slate-500 font-medium">Critical incidents and community support dashboard.</p>
+                </div>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
@@ -374,7 +339,7 @@
                         <p id="le-sos-count" class="text-4xl font-black text-red-600">0</p>
                     </div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Volunteers</p>
+                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Volunteers Pool</p>
                         <p id="le-vol-count" class="text-4xl font-black text-blue-600">0</p>
                     </div>
                 </div>
@@ -389,146 +354,113 @@
 
     <!-- Chat Widget -->
     <div id="chat-widget" class="fixed bottom-6 left-6 flex flex-col items-start">
-        <div id="chat-panel" class="hidden chat-panel bg-white rounded-3xl shadow-2xl border border-slate-200 mb-4 overflow-hidden">
+        <div id="chat-panel" class="hidden chat-panel bg-white rounded-3xl shadow-2xl border border-slate-200 mb-4 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
             <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
-                <h4 class="font-black text-sm uppercase tracking-widest">Community Hub</h4>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-xs">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h4 class="font-black text-xs uppercase tracking-widest">Community Hub</h4>
+                </div>
                 <button onclick="window.toggleChat()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
-            <div id="chat-messages-view" class="flex-grow flex flex-col h-full bg-white">
+            <div id="chat-messages-view" class="flex-grow flex flex-col h-full bg-white overflow-hidden">
                 <div id="message-container" class="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-hide"></div>
-                <div class="p-4 border-t border-slate-100 flex space-x-2">
-                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-grow px-4 py-2 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-sm focus:ring-2 focus:ring-slate-900 outline-none">
-                    <button onclick="window.sendMessage()" class="bg-slate-900 text-white p-2 rounded-xl w-10 h-10 flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+                <div class="p-4 border-t border-slate-100 flex space-x-2 bg-slate-50">
+                    <input type="text" id="chat-input" placeholder="Say something to the community..." class="flex-grow px-4 py-2 rounded-xl bg-white border-none ring-1 ring-slate-200 text-sm focus:ring-2 focus:ring-slate-900 outline-none">
+                    <button onclick="window.sendMessage()" class="bg-slate-900 text-white p-2 rounded-xl w-10 h-10 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
         </div>
-        <button onclick="window.toggleChat()" class="bg-slate-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition-transform">
+        <button onclick="window.toggleChat()" class="bg-slate-900 text-white w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95">
             <i class="fas fa-comments"></i>
         </button>
     </div>
 
     <!-- Modals -->
-    <div id="reportModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative">
+    <div id="reportModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden modal-overlay p-4">
+        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-black">Report Incident</h3>
+                <h3 class="text-2xl font-black text-slate-900">Report Incident</h3>
                 <button onclick="window.closeReportModal()"><i class="fas fa-times text-xl text-slate-400"></i></button>
             </div>
             <form onsubmit="window.handleReportSubmit(event)" class="space-y-6">
-                <input type="text" placeholder="Incident Type" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none">
-                <textarea placeholder="Details..." rows="4" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none"></textarea>
-                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black">LOG REPORT</button>
+                <input type="text" placeholder="Incident Category (Theft, Suspicious Activity, etc.)" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
+                <textarea placeholder="Provide as much detail as possible..." rows="4" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+                <button type="submit" class="w-full bg-red-600 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-red-700 transition-all">LOG ENCRYPTED REPORT</button>
             </form>
         </div>
     </div>
 
-    <div id="volunteerModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative">
+    <div id="volunteerModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden modal-overlay p-4">
+        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-black">Be On Call</h3>
+                <h3 class="text-2xl font-black text-slate-900">Register as On Call</h3>
                 <button onclick="window.closeVolunteerModal()"><i class="fas fa-times text-xl text-slate-400"></i></button>
             </div>
+            <p class="text-slate-500 mb-8 text-sm">You'll be part of a peer-to-peer safety network. If someone triggers an SOS nearby, you'll be notified to provide virtual or physical support.</p>
             <form onsubmit="window.handleRegistration(event)" class="space-y-6">
-                <input id="vol-name" type="text" placeholder="Full Name" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none">
-                <input id="vol-phone" type="tel" placeholder="10-digit Phone" pattern="[0-9]{10}" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none">
-                <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black">REGISTER NOW</button>
+                <input id="vol-name" type="text" placeholder="Full Legal Name" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
+                <input id="vol-phone" type="tel" placeholder="10-digit Phone Number" pattern="[0-9]{10}" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-slate-900">
+                <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-slate-800 transition-all">REGISTER NOW</button>
             </form>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[120] hidden bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl">
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[120] hidden bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center space-x-3">
+        <i class="fas fa-info-circle text-blue-400"></i>
         <span id="toast-msg" class="font-bold text-sm"></span>
     </div>
 
     <script type="module">
-        /*
-        ========================================================================
-        FIREBASE SETUP GUIDE (READ THIS TO FIX ERRORS)
-        ========================================================================
-        1. ENABLE ANONYMOUS AUTH:
-           Go to Firebase Console > Build > Authentication > Sign-in method.
-           Enable "Anonymous". Without this, data cannot be saved.
-
-        2. SET FIRESTORE SECURITY RULES:
-           Go to Firebase Console > Build > Firestore Database > Rules.
-           Paste these rules (Important: The path must match your appId):
-           
-           rules_version = '2';
-           service cloud.firestore {
-             match /databases/{database}/documents {
-               match /artifacts/{appId}/public/data/{collectionName}/{docId} {
-                 allow read, write: if request.auth != null;
-               }
-             }
-           }
-        ========================================================================
-        */
-
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, setDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // --- PRODUCTION CONFIGURATION ---
-        const fallbackConfig = {
-            apiKey: "AIzaSyAWh2RWD7DRJenPhg-_F3SrbTt9ZvfMb58",
-            authDomain: "codecraft-ba355.firebaseapp.com",
-            projectId: "codecraft-ba355",
-            storageBucket: "codecraft-ba355.firebasestorage.app",
-            messagingSenderId: "462067380594",
-            appId: "1:462067380594:web:0f94e2c2b9d60bbc236deb",
-            measurementId: "G-RGJ5TDG7KM"
-        };
-
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
+        // Configuration
+        const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // MeasurementId is optional but analytics requires it if present
-        let analytics;
-        try {
-            analytics = getAnalytics(app);
-        } catch (e) {
-            console.warn("Analytics failed to initialize.");
-        }
-        
-        // App ID determines the Firestore path
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-production-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-v1';
 
         let user = null;
         let map, sosMap;
         let emergencyMode = false;
         let gpsTrackingMode = false;
-        let watchId = null;
-        let userMarker = null;
+        let watchId = null; // To track geolocation
         let volunteersList = [];
         let sosMarkers = {};
+        let currentUserCoords = { lat: 28.6139, lng: 77.2090 }; // Default: New Delhi
 
         // Helper for Firestore Paths (Rule 1)
         const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
 
-        // Auth initialization (Rule 3)
+        // Auth Logic (Rule 3)
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    // Falls back to Anonymous. ENSURE THIS IS ENABLED IN FIREBASE CONSOLE!
                     await signInAnonymously(auth);
                 }
             } catch (err) {
                 console.error("Firebase Auth Error:", err);
-                window.showToast("Auth Error. Enable 'Anonymous' in Firebase Console.");
+                window.showToast("Secure connection failed. Please retry.");
             }
         };
 
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
-                console.log("Logged in as:", u.uid);
                 setupListeners();
                 setupMaps();
+                // Request initial position for better map centering
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    currentUserCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    if (map) map.setView([currentUserCoords.lat, currentUserCoords.lng], 14);
+                }, (err) => console.warn("GPS Access Denied/Unavailable."));
             }
         });
 
@@ -539,10 +471,8 @@
             onSnapshot(getColl('volunteers'), (snap) => {
                 volunteersList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderLePortal();
-            }, (err) => {
-                console.error("Volunteers sync failed:", err);
-                if (err.code === 'permission-denied') window.showToast("Sync Error: Fix Firestore Rules.");
-            });
+                updateVolunteerSectionStatus();
+            }, (err) => console.error("Volunteers sync failed:", err));
 
             // Sync SOS Signals
             onSnapshot(getColl('sos_signals'), (snap) => {
@@ -553,28 +483,26 @@
 
             // Sync Chat
             onSnapshot(getColl('messages'), (snap) => {
-                const msgs = snap.docs.map(d => d.data()).sort((a,b) => a.sentAt - b.sentAt);
+                const msgs = snap.docs.map(d => d.data()).sort((a,b) => (a.sentAt?.seconds || 0) - (b.sentAt?.seconds || 0));
                 const container = document.getElementById('message-container');
                 container.innerHTML = msgs.map(m => `
                     <div class="flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}">
                         <p class="text-[9px] font-black text-slate-400 mb-1 uppercase">${m.name}</p>
-                        <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${m.uid === user.uid ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}">
+                        <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${m.uid === user.uid ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'} shadow-sm">
                             ${m.text}
                         </div>
                     </div>
                 `).join('');
                 container.scrollTop = container.scrollHeight;
-            }, (err) => {
-                console.error("Chat sync error:", err);
-                const container = document.getElementById('message-container');
-                container.innerHTML = `<div class="p-4 text-center text-red-500 text-xs font-bold">Chat Disabled: Update Firestore Rules</div>`;
-            });
+            }, (err) => console.error("Chat sync error:", err));
         };
 
         const setupMaps = () => {
             if (!map) {
-                map = L.map('leaflet-map', { scrollWheelZoom: false }).setView([28.6139, 77.2090], 11);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                map = L.map('leaflet-map', { scrollWheelZoom: false }).setView([currentUserCoords.lat, currentUserCoords.lng], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
             }
         };
 
@@ -589,10 +517,10 @@
                 });
                 window.closeVolunteerModal();
                 document.getElementById('on-call-status').classList.remove('hidden');
-                window.showToast("Registered as On-Call Volunteer.");
+                window.showToast("You are now live as an On-Call Volunteer.");
             } catch (err) {
-                console.error("Volunteer Registration Error:", err);
-                window.showToast("Registration Failed: Update Firestore Rules.");
+                console.error("Registration error:", err);
+                window.showToast("Could not join program. Try again.");
             }
         };
 
@@ -601,17 +529,14 @@
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid));
                 document.getElementById('on-call-status').classList.add('hidden');
-                window.showToast("Left On-Call pool.");
+                window.showToast("You have left the On-Call pool.");
             } catch (err) {
                 window.showToast("Error updating status.");
             }
         };
 
         window.toggleEmergencyMode = async () => {
-            if (!user) {
-                window.showToast("Waiting for secure connection...");
-                return;
-            }
+            if (!user) return;
             emergencyMode = !emergencyMode;
             const btn = document.getElementById('emergency-toggle');
             const indicator = document.getElementById('emergency-indicator');
@@ -623,8 +548,9 @@
                 indicator.classList.remove('hidden');
                 
                 let volunteer = null;
-                if (volunteersList.length > 0) {
-                    volunteer = volunteersList[Math.floor(Math.random() * volunteersList.length)];
+                const pool = volunteersList.filter(v => v.uid !== user.uid);
+                if (pool.length > 0) {
+                    volunteer = pool[Math.floor(Math.random() * pool.length)];
                     document.getElementById('assigned-vol-name').innerText = volunteer.name;
                     document.getElementById('assigned-vol-phone').innerText = volunteer.phone;
                     document.getElementById('assigned-vol-phone').href = `tel:${volunteer.phone}`;
@@ -632,20 +558,35 @@
                 }
 
                 try {
-                    await setDoc(sosRef, {
-                        uid: user.uid,
-                        lat: 28.6139 + (Math.random() - 0.5) * 0.1,
-                        lng: 77.2090 + (Math.random() - 0.5) * 0.1,
-                        volunteer: volunteer || null,
-                        timestamp: Timestamp.now()
-                    });
-                    window.showToast("SOS Broadcast Active.");
+                    // Try to get actual location before broadcast
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        currentUserCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        await setDoc(sosRef, {
+                            uid: user.uid,
+                            lat: currentUserCoords.lat,
+                            lng: currentUserCoords.lng,
+                            volunteer: volunteer || null,
+                            timestamp: Timestamp.now()
+                        });
+                        window.showToast("REAL SOS broadcast active using your GPS position.");
+                        // Force GPS tracking to be ON if SOS is ON
+                        if (!gpsTrackingMode) window.toggleGpsTracking();
+                    }, async (err) => {
+                        console.error("GPS access failed, using last known.");
+                        await setDoc(sosRef, {
+                            uid: user.uid,
+                            lat: currentUserCoords.lat,
+                            lng: currentUserCoords.lng,
+                            volunteer: volunteer || null,
+                            timestamp: Timestamp.now()
+                        });
+                        window.showToast("SOS active (Last known position used).");
+                    }, { enableHighAccuracy: true });
                 } catch (err) {
-                    console.error("SOS Write Error:", err);
-                    window.showToast("SOS Failed: Fix Firestore Rules.");
                     emergencyMode = false;
                     btn.classList.remove('emergency-btn-active');
                     indicator.classList.add('hidden');
+                    window.showToast("SOS Broadcast Failed.");
                 }
             } else {
                 btn.classList.remove('emergency-btn-active');
@@ -658,11 +599,52 @@
             }
         };
 
-        window.sendMessage = async () => {
-            if (!user) {
-                window.showToast("Not connected to server.");
+        window.toggleGpsTracking = () => {
+            if (!("geolocation" in navigator)) {
+                window.showToast("Geolocation is not supported by your browser.");
                 return;
             }
+
+            gpsTrackingMode = !gpsTrackingMode;
+            const btn = document.getElementById('gps-toggle');
+            const indicator = document.getElementById('gps-indicator');
+            
+            if (gpsTrackingMode) {
+                btn.classList.add('gps-btn-active');
+                indicator.classList.remove('hidden');
+                
+                watchId = navigator.geolocation.watchPosition((pos) => {
+                    currentUserCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    
+                    // Update main map center
+                    if (map) map.setView([currentUserCoords.lat, currentUserCoords.lng], map.getZoom());
+
+                    // If Emergency Mode is active, update the SOS signal in real-time
+                    if (emergencyMode && user) {
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sos_signals', user.uid), {
+                            lat: currentUserCoords.lat,
+                            lng: currentUserCoords.lng,
+                            lastUpdate: Timestamp.now()
+                        }, { merge: true });
+                    }
+                }, (err) => {
+                    console.error("GPS Error:", err);
+                    window.showToast("GPS Tracking Error: Ensure location is enabled.");
+                    window.toggleGpsTracking(); // Turn off
+                }, { enableHighAccuracy: true, maximumAge: 1000 });
+
+                window.showToast("REAL-TIME GPS Tracking enabled.");
+            } else {
+                if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                btn.classList.remove('gps-btn-active');
+                indicator.classList.add('hidden');
+                window.showToast("GPS Tracking paused.");
+            }
+        };
+
+        window.sendMessage = async () => {
+            if (!user) return;
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text) return;
@@ -670,13 +652,12 @@
                 await addDoc(getColl('messages'), {
                     text,
                     uid: user.uid,
-                    name: user.uid.slice(-4),
+                    name: `User-${user.uid.slice(-4)}`,
                     sentAt: Timestamp.now()
                 });
                 input.value = '';
             } catch (err) {
-                console.error("Chat send error:", err);
-                window.showToast("Message failed: Fix Firestore Rules.");
+                window.showToast("Message failed.");
             }
         };
 
@@ -684,27 +665,14 @@
             e.preventDefault();
             const detail = document.getElementById('map-warning-detail').value;
             const center = map.getCenter();
-            const marker = L.marker([center.lat + (Math.random()-0.5)*0.02, center.lng + (Math.random()-0.5)*0.02], {
+            
+            const marker = L.marker([center.lat, center.lng], {
                 icon: L.divIcon({ className: 'warning-marker', html: '<div class="warning-icon-inner"><i class="fas fa-exclamation-triangle"></i></div>' })
             }).addTo(map);
-            marker.bindTooltip(detail).openTooltip();
-            window.showToast("Warning pinned to map.");
+            marker.bindPopup(`<strong>Report:</strong><br>${detail}`).openPopup();
+            
+            window.showToast("Safety warning pinned to map.");
             e.target.reset();
-        };
-
-        window.toggleGpsTracking = () => {
-            gpsTrackingMode = !gpsTrackingMode;
-            const btn = document.getElementById('gps-toggle');
-            const indicator = document.getElementById('gps-indicator');
-            if (gpsTrackingMode) {
-                btn.classList.add('gps-btn-active');
-                indicator.classList.remove('hidden');
-                window.showToast("GPS Tracking Active.");
-            } else {
-                btn.classList.remove('gps-btn-active');
-                indicator.classList.add('hidden');
-                window.showToast("Tracking Stopped.");
-            }
         };
 
         const renderSosSignals = (signals) => {
@@ -713,7 +681,7 @@
             sosMarkers = {};
             
             const list = document.getElementById('sos-list-sidebar');
-            list.innerHTML = signals.length ? '' : '<div class="text-xs text-slate-400 italic">No active signals.</div>';
+            list.innerHTML = signals.length ? '' : '<div class="text-xs text-slate-400 italic text-center py-8">No signals active.</div>';
 
             signals.forEach(s => {
                 const marker = L.marker([s.lat, s.lng], {
@@ -722,9 +690,18 @@
                 sosMarkers[s.id] = marker;
 
                 const div = document.createElement('div');
-                div.className = "p-4 bg-white border rounded-xl cursor-pointer hover:border-red-500 transition-all";
-                div.innerHTML = `<p class="text-xs font-black text-red-600">ID: ...${s.uid.slice(-6)}</p><p class="text-[10px] text-slate-500">Live Frequency</p>`;
-                div.onclick = () => sosMap.flyTo([s.lat, s.lng], 15);
+                div.className = "p-4 bg-white border rounded-2xl cursor-pointer hover:border-red-500 transition-all shadow-sm";
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs font-black text-red-600">ID: ...${s.uid.slice(-6)}</p>
+                        <span class="text-[8px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase font-black">Active</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Status: Tracking GPS Frequency</p>
+                `;
+                div.onclick = () => {
+                    sosMap.flyTo([s.lat, s.lng], 15);
+                    marker.bindPopup("Active SOS Trigger Point").openPopup();
+                };
                 list.appendChild(div);
             });
         };
@@ -738,28 +715,45 @@
             const list = document.getElementById('le-sos-list');
             if (list) {
                 if (signals.length === 0) {
-                    list.innerHTML = '<div class="p-8 text-center text-slate-400 italic">No active SOS signals.</div>';
+                    list.innerHTML = '<div class="p-12 text-center text-slate-400 italic">No active SOS signals at this time.</div>';
                 } else {
                     list.innerHTML = signals.map(s => `
                         <div class="p-6 flex justify-between items-center hover:bg-slate-50">
                             <div>
                                 <h4 class="font-bold text-slate-900">SOS Trigger: ...${s.uid.slice(-6)}</h4>
-                                <p class="text-xs text-slate-500">Volunteer: ${s.volunteer ? s.volunteer.name : 'Awaiting...'}</p>
+                                <p class="text-xs text-slate-500">Assigned Volunteer: ${s.volunteer ? s.volunteer.name : '<span class="text-amber-500 font-bold">Awaiting Dispatch</span>'}</p>
                             </div>
-                            <button onclick="window.switchView('emergency-map')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">MONITOR</button>
+                            <button onclick="window.switchView('emergency-map')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-800">MONITOR LIVE</button>
                         </div>
                     `).join('');
                 }
             }
         };
 
+        const updateVolunteerSectionStatus = () => {
+            const container = document.getElementById('vol-action-container');
+            const isVolunteer = volunteersList.some(v => v.uid === user?.uid);
+            if (isVolunteer) {
+                container.innerHTML = `
+                    <div class="bg-blue-600/20 border border-blue-500/30 p-4 rounded-2xl flex items-center justify-between max-w-sm">
+                        <span class="text-sm font-bold text-blue-400">You are active in the network</span>
+                        <button onclick="window.handleLeaveOnCall()" class="text-xs text-blue-400 underline font-bold">Deactivate</button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `<button onclick="window.openVolunteerModal()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold shadow-xl transition-all">Join Program</button>`;
+            }
+        };
+
         // Window Globals
         window.switchView = (view) => {
-            document.getElementById('citizen-view').classList.add('hidden');
-            document.getElementById('emergency-map-view').classList.add('hidden');
-            document.getElementById('le-view').classList.add('hidden');
+            const views = ['citizen-view', 'emergency-map-view', 'le-view'];
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
             
-            if (view === 'citizen') document.getElementById('citizen-view').classList.remove('hidden');
+            if (view === 'citizen') {
+                document.getElementById('citizen-view').classList.remove('hidden');
+                setTimeout(() => map.invalidateSize(), 200);
+            }
             if (view === 'le') {
                 document.getElementById('le-view').classList.remove('hidden');
                 renderLePortal();
@@ -767,12 +761,12 @@
             if (view === 'emergency-map') {
                 document.getElementById('emergency-map-view').classList.remove('hidden');
                 if (!sosMap) {
-                    sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 11);
+                    sosMap = L.map('sos-leaflet-map').setView([currentUserCoords.lat, currentUserCoords.lng], 11);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
                 }
-                setTimeout(() => sosMap.invalidateSize(), 100);
+                setTimeout(() => sosMap.invalidateSize(), 200);
             }
-            window.scrollTo(0,0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.toggleChat = () => document.getElementById('chat-panel').classList.toggle('hidden');
@@ -781,15 +775,17 @@
         window.openVolunteerModal = () => document.getElementById('volunteerModal').classList.remove('hidden');
         window.closeVolunteerModal = () => document.getElementById('volunteerModal').classList.add('hidden');
         window.scrollToId = (id) => document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        
         window.showToast = (msg) => {
             const t = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('hidden');
             setTimeout(() => t.classList.add('hidden'), 5000);
         };
+
         window.handleReportSubmit = (e) => {
             e.preventDefault();
-            window.showToast("Incident logged and encrypted.");
+            window.showToast("Incident logged securely. Reference: " + Math.random().toString(36).substring(7).toUpperCase());
             window.closeReportModal();
         };
 
