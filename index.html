@@ -16,7 +16,6 @@
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
             color: #1e293b;
-            transition: background-color 0.5s ease;
         }
 
         .glass-nav {
@@ -25,12 +24,11 @@
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
         }
 
-        /* Gating Overlay Styling */
         #verification-gate {
             position: fixed;
             inset: 0;
             z-index: 9999;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(15, 23, 42, 0.98);
             backdrop-filter: blur(12px);
             display: flex;
             align-items: center;
@@ -58,23 +56,12 @@
         #leaflet-map, #sos-leaflet-map {
             width: 100%;
             height: 100%;
-            background: #cbd5e1; /* Visual placeholder while loading */
+            background: #cbd5e1;
         }
 
-        .emergency-btn-active {
-            background-color: #ef4444 !important;
-            color: white !important;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-        }
+        .emergency-btn-active { background-color: #ef4444 !important; color: white !important; }
+        .gps-btn-active { background-color: #3b82f6 !important; color: white !important; }
 
-        .gps-btn-active {
-            background-color: #3b82f6 !important;
-            color: white !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
-        }
-
-        /* Chat Panel Styling */
         .chat-panel {
             height: 500px;
             width: 350px;
@@ -82,18 +69,9 @@
             display: flex;
             flex-direction: column;
         }
-        .message-bubble {
-            max-width: 85%;
-            word-wrap: break-word;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .pe_signin_button {
-            display: inline-block;
-            vertical-align: middle;
-        }
+        .message-bubble { max-width: 85%; word-wrap: break-word; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .pe_signin_button { display: inline-block; vertical-align: middle; }
     </style>
 </head>
 <body id="app-body">
@@ -105,147 +83,100 @@
                 <div class="w-20 h-20 bg-slate-900 text-white rounded-3xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl">
                     <i class="fas fa-shield-halved"></i>
                 </div>
-                <h2 class="text-3xl font-black text-slate-900 mb-3 tracking-tight">Security Access</h2>
-                <p class="text-slate-500 mb-8 font-medium leading-relaxed">
-                    To maintain community trust and prevent false alarms, SAAVADHAN requires a verified phone number for all users.
-                </p>
+                <h2 class="text-3xl font-black text-slate-900 mb-3">Security Access</h2>
+                <p class="text-slate-500 mb-8 font-medium">Verify your phone to unlock the Safety Hub.</p>
                 
                 <div class="pe_signin_button" data-client-id="13401266232106403409">
                     <script src="https://www.phone.email/sign_in_button_v1.js" async></script>
                 </div>
                 
-                <p class="text-[10px] text-slate-400 mt-6 uppercase tracking-widest font-bold">Encrypted Verification</p>
+                <p class="text-[10px] text-slate-400 mt-6 uppercase font-bold">Encrypted Connection</p>
             </div>
         </div>
     </div>
 
     <!-- Navigation -->
     <nav class="glass-nav fixed top-0 w-full z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center space-x-3 cursor-pointer" onclick="window.switchView('citizen')">
-                    <div class="bg-slate-900 text-white p-2.5 rounded-xl shadow-lg">
-                        <i class="fas fa-fingerprint text-xl"></i>
-                    </div>
-                    <div class="hidden sm:block">
-                        <span class="text-2xl font-bold tracking-tighter text-slate-900">SAAVADHAN</span>
-                        <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold -mt-1">India Safety Hub</p>
-                    </div>
+        <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="window.switchView('citizen')">
+                <div class="bg-slate-900 text-white p-2 rounded-xl">
+                    <i class="fas fa-fingerprint text-xl"></i>
                 </div>
-                
-                <div class="flex items-center space-x-2 md:space-x-4">
-                    <div id="citizen-nav-links" class="hidden md:flex items-center space-x-6 text-sm font-semibold mr-4">
-                        <a href="javascript:void(0)" onclick="window.switchView('citizen')" class="nav-link text-slate-600 hover:text-slate-900">Safety Hub</a>
-                        <a href="javascript:void(0)" onclick="window.switchView('emergency-map')" class="nav-link text-red-600 hover:text-red-700">Emergency Map</a>
-                    </div>
-
-                    <button onclick="window.switchView('le')" class="flex items-center space-x-2 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-[10px] md:text-xs transition-all hover:bg-slate-900 hover:text-white">
-                        <i class="fas fa-user-shield"></i>
-                        <span class="hidden sm:inline">LE PORTAL</span>
-                    </button>
-
-                    <div class="flex items-center space-x-2">
-                        <button id="gps-toggle" onclick="window.toggleGpsTracking()" class="flex items-center space-x-2 px-3 md:px-4 py-2 rounded-xl border-2 border-blue-100 text-blue-600 font-bold text-[10px] md:text-xs transition-all hover:bg-blue-50">
-                            <i class="fas fa-location-crosshairs"></i>
-                            <span class="hidden sm:inline">GPS</span>
-                        </button>
-                        <button id="emergency-toggle" onclick="window.toggleEmergencyMode()" class="flex items-center space-x-2 px-3 md:px-4 py-2 rounded-xl border-2 border-red-100 text-red-600 font-bold text-[10px] md:text-xs transition-all hover:bg-red-50">
-                            <i class="fas fa-shield-alt"></i>
-                            <span class="hidden sm:inline">SOS</span>
-                        </button>
-                    </div>
-                </div>
+                <span class="text-2xl font-black tracking-tighter">SAAVADHAN</span>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button onclick="window.switchView('le')" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">LE PORTAL</button>
+                <button id="gps-toggle" onclick="window.toggleGpsTracking()" class="px-3 py-2 rounded-xl border-2 border-blue-100 text-blue-600 font-bold text-xs">GPS</button>
+                <button id="emergency-toggle" onclick="window.toggleEmergencyMode()" class="px-3 py-2 rounded-xl border-2 border-red-100 text-red-600 font-bold text-xs">SOS</button>
             </div>
         </div>
     </nav>
 
     <!-- CITIZEN VIEW -->
     <div id="citizen-view" class="block pt-32 pb-20">
-        <header class="py-12 px-4 text-center">
-            <div id="emergency-indicator" class="hidden mb-6">
-                <div class="inline-flex items-center space-x-2 bg-red-600 text-white px-6 py-2 rounded-full text-xs font-black animate-pulse shadow-xl">
-                    <i class="fas fa-broadcast-tower"></i>
-                    <span>EMERGENCY TRIGGER ACTIVE</span>
-                </div>
-            </div>
-            <h1 class="text-5xl md:text-7xl font-black text-slate-900 mb-4 tracking-tight">Secure Your <span class="text-blue-600">Neighborhood.</span></h1>
-            <p class="text-xl text-slate-500 max-w-2xl mx-auto font-medium">Verified Community Safety Network</p>
-        </header>
-
-        <main class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div class="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
-                <h2 class="text-3xl font-black text-slate-900 mb-6">Safety Map</h2>
+                <h2 class="text-3xl font-black mb-6">Safety Map</h2>
                 <div class="map-frame-container h-[400px]">
                     <div id="leaflet-map"></div>
                 </div>
             </div>
-            <div class="space-y-8">
-                <div class="bg-slate-900 text-white p-10 rounded-[3rem] shadow-xl">
-                    <h2 class="text-3xl font-black mb-4">Volunteer Program</h2>
-                    <p class="text-slate-400 mb-8 font-medium leading-relaxed">You are now verified. You can join the citizen watch program to support others nearby.</p>
-                    <div id="vol-action-container">
-                        <button onclick="window.openVolunteerModal()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-2xl font-bold shadow-xl transition-all">Enable My Profile</button>
-                    </div>
-                    <div id="on-call-status" class="hidden mt-6 flex items-center bg-green-500/10 border border-green-500/20 px-4 py-3 rounded-2xl">
-                        <span class="w-3 h-3 bg-green-500 rounded-full animate-ping mr-3"></span>
-                        <span class="text-sm font-black text-green-400 uppercase tracking-tighter">On-Call Ready</span>
-                    </div>
+            <div class="bg-slate-900 text-white p-10 rounded-[3rem] shadow-xl flex flex-col justify-center">
+                <h2 class="text-3xl font-black mb-4">Volunteer Status</h2>
+                <div id="vol-action-container">
+                    <button onclick="window.openVolunteerModal()" class="bg-blue-600 px-8 py-4 rounded-2xl font-bold shadow-xl">Join Program</button>
+                </div>
+                <div id="on-call-status" class="hidden mt-6 flex items-center bg-green-500/10 border border-green-500/20 px-4 py-3 rounded-2xl">
+                    <span class="w-3 h-3 bg-green-500 rounded-full animate-ping mr-3"></span>
+                    <span class="text-sm font-black text-green-400">ON-CALL READY</span>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 
-    <!-- LE VIEW & EMERGENCY MAP -->
-    <div id="le-view" class="hidden min-h-screen pt-32 pb-20 px-4 md:px-8 bg-slate-100">
+    <!-- OTHER VIEWS -->
+    <div id="le-view" class="hidden min-h-screen pt-32 pb-20 px-4 bg-slate-100">
         <div class="max-w-7xl mx-auto">
-            <h1 class="text-4xl font-black text-slate-900 mb-10">Law Enforcement Portal</h1>
+            <h1 class="text-4xl font-black mb-10">Law Enforcement Portal</h1>
             <div id="le-sos-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
     </div>
 
-    <div id="emergency-map-view" class="hidden min-h-screen pt-32 pb-20 px-4 md:px-8 bg-slate-50">
+    <div id="emergency-map-view" class="hidden min-h-screen pt-32 pb-20 px-4 bg-slate-50">
         <div class="max-w-7xl mx-auto h-[70vh]">
-            <h1 class="text-2xl font-black mb-6">Live Command Center</h1>
-            <div class="map-frame-container h-full">
-                <div id="sos-leaflet-map"></div>
-            </div>
+            <h1 class="text-2xl font-black mb-6">SOS Command Center</h1>
+            <div class="map-frame-container h-full"><div id="sos-leaflet-map"></div></div>
         </div>
     </div>
 
-    <!-- Chat Widget -->
+    <!-- Chat -->
     <div id="chat-widget" class="fixed bottom-6 left-6 flex flex-col items-start z-[100]">
-        <div id="chat-panel" class="hidden chat-panel bg-white rounded-[2rem] shadow-2xl border border-slate-200 mb-4 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div id="chat-panel" class="hidden chat-panel bg-white rounded-[2rem] shadow-2xl border border-slate-200 mb-4 overflow-hidden">
             <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-xs">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <h4 class="font-black text-xs uppercase tracking-widest">Community Hub</h4>
-                </div>
+                <h4 class="font-black text-xs uppercase tracking-widest">Community Hub</h4>
                 <button onclick="window.toggleChat()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
-            <div id="chat-messages-view" class="flex-grow flex flex-col h-full bg-white overflow-hidden">
-                <div id="message-container" class="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-hide"></div>
-                <div class="p-4 border-t border-slate-100 flex space-x-2 bg-slate-50">
-                    <input type="text" id="chat-input" placeholder="Say something..." class="flex-grow px-4 py-2 rounded-xl bg-white border-none ring-1 ring-slate-200 text-sm focus:ring-2 focus:ring-slate-900 outline-none">
-                    <button onclick="window.sendMessage()" class="bg-slate-900 text-white p-2 rounded-xl w-10 h-10 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"><i class="fas fa-paper-plane"></i></button>
-                </div>
+            <div id="message-container" class="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-hide"></div>
+            <div class="p-4 border-t border-slate-100 flex space-x-2 bg-slate-50">
+                <input type="text" id="chat-input" placeholder="Message..." class="flex-grow px-4 py-2 rounded-xl bg-white border-none ring-1 ring-slate-200 text-sm outline-none">
+                <button onclick="window.sendMessage()" class="bg-slate-900 text-white p-2 rounded-xl w-10 h-10"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
-        <button onclick="window.toggleChat()" class="bg-slate-900 text-white w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95">
+        <button onclick="window.toggleChat()" class="bg-slate-900 text-white w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center text-xl">
             <i class="fas fa-comments"></i>
         </button>
     </div>
 
     <!-- Modals -->
     <div id="volunteerModal" class="fixed inset-0 z-[110] flex items-center justify-center hidden bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl relative">
-            <h3 class="text-2xl font-black mb-6">Be On Call</h3>
-            <form onsubmit="window.handleRegistration(event)" class="space-y-6">
-                <input id="vol-name" type="text" placeholder="Full Name" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none">
-                <input id="vol-phone" type="tel" placeholder="Phone" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none">
-                <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black">ACTIVATE PROFILE</button>
-                <button type="button" onclick="window.closeVolunteerModal()" class="w-full text-slate-400 font-bold text-sm">Cancel</button>
+        <div class="bg-white rounded-[2rem] max-w-lg w-full p-10 shadow-2xl">
+            <h3 class="text-2xl font-black mb-6">Register Volunteer</h3>
+            <form onsubmit="window.handleRegistration(event)" class="space-y-4">
+                <input id="vol-name" type="text" placeholder="Full Name" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none">
+                <input id="vol-phone" type="tel" placeholder="Phone" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 ring-1 ring-slate-200 outline-none">
+                <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black">ACTIVATE</button>
+                <button type="button" onclick="window.closeVolunteerModal()" class="w-full text-slate-400 text-sm py-2">Cancel</button>
             </form>
         </div>
     </div>
@@ -254,33 +185,16 @@
         <span id="toast-msg" class="font-bold text-sm"></span>
     </div>
 
-    <!-- Phone Verification Callback -->
     <script>
         function phoneEmailListener(userObj){
-            const user_json_url = userObj.user_json_url;
-            console.log("Verified URL:", user_json_url);
-            
-            const gate = document.getElementById('verification-gate');
-            gate.classList.add('verified');
-            
+            document.getElementById('verification-gate').classList.add('verified');
             sessionStorage.setItem('saavadhan_verified', 'true');
-            
-            // Critical: Force maps to recalculate their size now that the overlay is gone
             if(window.mapInstance) window.mapInstance.invalidateSize();
-            if(window.sosMapInstance) window.sosMapInstance.invalidateSize();
-            
-            if(window.showToast) {
-                window.showToast("Verification Successful! Hub Unlocked.");
-            }
+            if(window.showToast) window.showToast("Verification Success!");
         }
-        
         window.onload = function() {
             if(sessionStorage.getItem('saavadhan_verified') === 'true') {
                 document.getElementById('verification-gate').classList.add('verified');
-                // Allow a small delay for DOM to settle before invalidating map size
-                setTimeout(() => {
-                    if(window.mapInstance) window.mapInstance.invalidateSize();
-                }, 500);
             }
         }
     </script>
@@ -299,19 +213,14 @@
             auth = getAuth(app);
             db = getFirestore(app);
             appId = typeof __app_id !== 'undefined' ? __app_id : 'saavadhan-v1';
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-        }
+        } catch (e) { console.error("Firebase initialization failed:", e); }
 
         let user = null;
         let map, sosMap;
-        let emergencyMode = false;
-        let gpsTrackingMode = false;
-
         const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
 
-        // Auth
-        const initAuth = async () => {
+        // Auth with Exponential Backoff
+        const initAuth = async (retries = 5, delay = 1000) => {
             if (!auth) return;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -319,7 +228,15 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (err) { console.error("Auth error", err); }
+            } catch (err) {
+                if (retries > 0) {
+                    // console.log(`Auth retry ${6 - retries}...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return initAuth(retries - 1, delay * 2);
+                }
+                console.error("Firebase Auth Final Error:", err);
+                window.showToast("Network Error: Could not connect to security service.");
+            }
         };
 
         onAuthStateChanged(auth, (u) => {
@@ -332,156 +249,74 @@
 
         const setupListeners = () => {
             if (!user || !db) return;
-
-            // SOS Listener
+            
+            // SOS Signals Listener
             onSnapshot(getColl('sos_signals'), (snap) => {
                 const signals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderLePortal(signals);
-            }, (err) => console.error("SOS Sync Error:", err));
+            }, (err) => {
+                if (err.code === 'permission-denied') {
+                    console.error("Firestore Permission Denied. Ensure rules are deployed.");
+                }
+            });
 
-            // Chat Listener
+            // Community Messages Listener
             onSnapshot(getColl('messages'), (snap) => {
                 const msgs = snap.docs.map(d => d.data()).sort((a,b) => (a.sentAt?.seconds || 0) - (b.sentAt?.seconds || 0));
                 const container = document.getElementById('message-container');
-                if (!container) return;
-                container.innerHTML = msgs.map(m => `
-                    <div class="flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}">
-                        <p class="text-[9px] font-black text-slate-400 mb-1 uppercase">${m.name}</p>
-                        <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${m.uid === user.uid ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'} shadow-sm">
-                            ${m.text}
+                if (container) {
+                    container.innerHTML = msgs.map(m => `
+                        <div class="flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}">
+                            <p class="text-[9px] font-black text-slate-400 mb-1 uppercase">${m.name || 'Citizen'}</p>
+                            <div class="message-bubble px-4 py-2 rounded-2xl text-sm ${m.uid === user.uid ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'} shadow-sm">
+                                ${m.text}
+                            </div>
                         </div>
-                    </div>
-                `).join('');
-                container.scrollTop = container.scrollHeight;
-            }, (err) => console.error("Chat sync error:", err));
+                    `).join('');
+                    container.scrollTop = container.scrollHeight;
+                }
+            }, (err) => console.error("Message Sync Error:", err));
         };
 
         const setupMaps = () => {
             if (!map) {
                 map = L.map('leaflet-map').setView([28.6139, 77.2090], 12);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
+                    attribution: '&copy; OpenStreetMap'
                 }).addTo(map);
-                window.mapInstance = map; // Export to window for verification callback
+                window.mapInstance = map;
             }
         };
 
         window.toggleEmergencyMode = async () => {
             if (!user || !db) return;
-            emergencyMode = !emergencyMode;
-            const btn = document.getElementById('emergency-toggle');
-            const indicator = document.getElementById('emergency-indicator');
             const ref = doc(db, 'artifacts', appId, 'public', 'data', 'sos_signals', user.uid);
-
-            if (emergencyMode) {
-                btn.classList.add('emergency-btn-active');
-                indicator.classList.remove('hidden');
-                await setDoc(ref, {
-                    uid: user.uid, lat: 28.6139, lng: 77.2090, timestamp: Timestamp.now()
-                });
-                window.showToast("SOS BROADCAST ACTIVE");
-            } else {
-                btn.classList.remove('emergency-btn-active');
-                indicator.classList.add('hidden');
-                await deleteDoc(ref);
-                window.showToast("SOS Stopped");
+            const btn = document.getElementById('emergency-toggle');
+            try {
+                if (!btn.classList.contains('emergency-btn-active')) {
+                    await setDoc(ref, { uid: user.uid, lat: 28.6139, lng: 77.2090, timestamp: Timestamp.now() });
+                    btn.classList.add('emergency-btn-active');
+                    window.showToast("SOS BROADCAST ACTIVE");
+                } else {
+                    await deleteDoc(ref);
+                    btn.classList.remove('emergency-btn-active');
+                    window.showToast("SOS STOPPED");
+                }
+            } catch (e) {
+                window.showToast("Error updating SOS status. Check network.");
+                console.error(e);
             }
         };
 
         window.toggleGpsTracking = () => {
-            gpsTrackingMode = !gpsTrackingMode;
             const btn = document.getElementById('gps-toggle');
-            if (gpsTrackingMode) {
-                btn.classList.add('gps-btn-active');
-                window.showToast("Live GPS Tracking Enabled");
-            } else {
-                btn.classList.remove('gps-btn-active');
-                window.showToast("Tracking Paused");
-            }
+            btn.classList.toggle('gps-btn-active');
+            window.showToast(btn.classList.contains('gps-btn-active') ? "GPS Active" : "GPS Off");
         };
 
         window.sendMessage = async () => {
-            if (!user || !db) return;
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
-            if (!text) return;
+            if (!text || !user || !db) return;
             try {
-                await addDoc(getColl('messages'), {
-                    text,
-                    uid: user.uid,
-                    name: `User-${user.uid.slice(-4)}`,
-                    sentAt: Timestamp.now()
-                });
-                input.value = '';
-            } catch (err) {
-                window.showToast("Message failed.");
-            }
-        };
-
-        window.handleRegistration = async (e) => {
-            e.preventDefault();
-            if (!user || !db) return;
-            const name = document.getElementById('vol-name').value;
-            const phone = document.getElementById('vol-phone').value;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'volunteers', user.uid), {
-                name, phone, uid: user.uid
-            });
-            window.closeVolunteerModal();
-            document.getElementById('on-call-status').classList.remove('hidden');
-            window.showToast("Volunteer Profile Activated");
-        };
-
-        window.renderLePortal = (signals) => {
-            const list = document.getElementById('le-sos-list');
-            if (!list) return;
-            if (signals.length === 0) {
-                list.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 italic">No signals currently.</div>`;
-                return;
-            }
-            list.innerHTML = signals.map(s => `
-                <div class="bg-white p-6 rounded-3xl border border-slate-200">
-                    <p class="text-xs font-black text-red-600 mb-2 uppercase">Active Incident</p>
-                    <h4 class="font-bold text-slate-900">User ID: ...${s.uid.slice(-6)}</h4>
-                    <button onclick="window.switchView('emergency-map')" class="mt-4 w-full bg-slate-900 text-white py-2 rounded-xl text-xs font-bold">Monitor</button>
-                </div>
-            `).join('');
-        };
-
-        window.switchView = (view) => {
-            document.getElementById('citizen-view').classList.add('hidden');
-            document.getElementById('le-view').classList.add('hidden');
-            document.getElementById('emergency-map-view').classList.add('hidden');
-            
-            const target = document.getElementById(view + '-view');
-            if (target) target.classList.remove('hidden');
-
-            if (view === 'emergency-map' && !sosMap) {
-                sosMap = L.map('sos-leaflet-map').setView([28.6139, 77.2090], 12);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(sosMap);
-                window.sosMapInstance = sosMap;
-            }
-            
-            // Invalidate size on view switch to prevent grey boxes
-            setTimeout(() => {
-                if(map) map.invalidateSize();
-                if(sosMap) sosMap.invalidateSize();
-            }, 100);
-        };
-
-        window.toggleChat = () => document.getElementById('chat-panel').classList.toggle('hidden');
-
-        window.showToast = (msg) => {
-            const t = document.getElementById('toast');
-            if (!t) return;
-            document.getElementById('toast-msg').innerText = msg;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 4000);
-        };
-
-        window.openVolunteerModal = () => document.getElementById('volunteerModal').classList.remove('hidden');
-        window.closeVolunteerModal = () => document.getElementById('volunteerModal').classList.add('hidden');
-
-        initAuth();
-    </script>
-</body>
-</html>
+                await addDoc(getColl('messages'),
